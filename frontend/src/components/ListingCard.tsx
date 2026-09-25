@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ImageOff } from 'lucide-react'
 import type { ListingSummary } from '../types'
-import { formatPrice } from '../lib/utils'
+import { formatDate, formatPrice } from '../lib/utils'
 import { AuthImage } from './AuthImage'
 import { StatusBadge } from './ui'
 
@@ -35,6 +35,9 @@ export function ListingCard({ listing }: { listing: ListingSummary }) {
               {listing.photoCount} фото
             </span>
           )}
+        </div>
+        <div className="text-xs text-slate-400 dark:text-zinc-500">
+          {formatDate(listing.createdAt)}
         </div>
       </div>
     </Link>

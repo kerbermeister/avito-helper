@@ -119,11 +119,13 @@ public class ListingService {
     @Transactional
     public void deletePhoto(Long userId, Long listingId, Long photoId) {
         Listing listing = getOwned(userId, listingId);
-        Photo photo = photoRepository.findById(photoId)
-                .filter(p -> p.getListing().getId().equals(listingId))
+        Photo photo = listing.getPhotos().stream()
+                .filter(p -> p.getId().equals(photoId))
+                .findFirst()
                 .orElseThrow(() -> new NotFoundException("Фото не найдено"));
         storageService.delete(photo.getStorageKey());
-        photoRepository.delete(photo);
+        // orphanRemoval=true удалит фото из БД после удаления из коллекции
+        listing.getPhotos().remove(photo);
     }
 
     @Transactional(readOnly = true)
@@ -194,6 +196,7 @@ public class ListingService {
                 listing.getCurrency(),
                 listing.getCategory(),
                 listing.getStatus(),
+                listing.getCreatedAt(),
                 listing.getUpdatedAt(),
                 coverPhotoId,
                 photoCount

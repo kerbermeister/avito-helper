@@ -10,6 +10,7 @@ public record ListingSummaryResponse(
         String currency,
         String category,
         ListingStatus status,
+        Instant createdAt,
         Instant updatedAt,
         Long coverPhotoId,
         int photoCount

@@ -23,6 +23,7 @@ export interface ListingSummary {
   currency: string
   category: string | null
   status: ListingStatus
+  createdAt: string
   updatedAt: string
   coverPhotoId: number | null
   photoCount: number
