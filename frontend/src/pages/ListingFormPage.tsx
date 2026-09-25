@@ -82,7 +82,7 @@ export function ListingFormPage() {
   const [recordingField, setRecordingField] = useState<VoiceField | null>(null)
   const voiceTargetRef = useRef<VoiceField | null>(null)
 
-  const { devices, selectedId, setSelectedId } = useMicrophones()
+  const { devices, selectedId, setSelectedId, refresh: refreshMics } = useMicrophones()
 
   useEffect(() => {
     if (listing) {
@@ -110,6 +110,9 @@ export function ListingFormPage() {
   const toggleVoice = (field: VoiceField) => {
     if (recordingField === field) {
       voice.stop()
+      // после первого использования надиктовки браузер выдаёт разрешение —
+      // тогда и появляются человекочитаемые названия микрофонов
+      void refreshMics()
     } else {
       voiceTargetRef.current = field
       setRecordingField(field)
