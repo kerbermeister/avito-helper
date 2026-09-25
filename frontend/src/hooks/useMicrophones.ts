@@ -8,14 +8,16 @@ export interface MicDevice {
 const STORAGE_KEY = 'avito_mic'
 
 /**
- * Список доступных микрофонов + выбранный (сохраняется в localStorage).
- * Безопасен в не-secure-контексте (обычный HTTP): navigator.mediaDevices там
- * отсутствует, поэтому все обращения защищены.
+ * Список доступных микрофонов + выбранный.
+ * Безопасен: navigator.mediaDevices может отсутствовать (HTTP без HTTPS),
+ * localStorage тоже может быть недоступен (iOS Safari инкогнито).
  */
 export function useMicrophones() {
   const [devices, setDevices] = useState<MicDevice[]>([])
   const [selectedId, setSelectedIdState] = useState<string>(
-    () => localStorage.getItem(STORAGE_KEY) ?? '',
+    () => {
+      try { return localStorage.getItem(STORAGE_KEY) ?? '' } catch { return '' }
+    },
   )
 
   const refresh = async () => {
@@ -50,7 +52,7 @@ export function useMicrophones() {
 
   const setSelectedId = (id: string) => {
     setSelectedIdState(id)
-    localStorage.setItem(STORAGE_KEY, id)
+    try { localStorage.setItem(STORAGE_KEY, id) } catch { /* ignore */ }
   }
 
   return { devices, selectedId, setSelectedId, refresh }

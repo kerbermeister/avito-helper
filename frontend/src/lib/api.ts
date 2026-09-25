@@ -7,18 +7,20 @@ import type {
   PhotoDto,
 } from '../types'
 
+import { safeGetItem, safeSetItem, safeRemoveItem } from './storage'
+
 const TOKEN_KEY = 'avito_token'
 
 export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY)
+  return safeGetItem(TOKEN_KEY)
 }
 
 export function saveToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token)
+  safeSetItem(TOKEN_KEY, token)
 }
 
 export function clearToken(): void {
-  localStorage.removeItem(TOKEN_KEY)
+  safeRemoveItem(TOKEN_KEY)
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {

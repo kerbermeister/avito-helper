@@ -20,7 +20,8 @@ import {
 } from '../lib/utils'
 import type { ListingStatus } from '../types'
 import { AuthImage } from '../components/AuthImage'
-import { Button, Card, CopyButton, Spinner, StatusBadge } from '../components/ui'
+import { Button, Card, Spinner, StatusBadge } from '../components/ui'
+import { CopyButton } from '../components/CopyButton'
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (

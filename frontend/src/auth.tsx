@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from 'react'
 import { api, clearToken, getToken, saveToken } from './lib/api'
+import { safeGetItem, safeSetItem, safeRemoveItem } from './lib/storage'
 
 interface AuthContextValue {
   token: string | null
@@ -19,7 +20,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(getToken)
   const [email, setEmail] = useState<string | null>(() =>
-    localStorage.getItem('avito_email'),
+    safeGetItem('avito_email'),
   )
 
   useEffect(() => {
@@ -34,14 +35,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (em: string, password: string) => {
     const res = await api.login(em, password)
     saveToken(res.accessToken)
-    localStorage.setItem('avito_email', res.email)
+    safeSetItem('avito_email', res.email)
     setToken(res.accessToken)
     setEmail(res.email)
   }
 
   const logout = () => {
     clearToken()
-    localStorage.removeItem('avito_email')
+    safeRemoveItem('avito_email')
     setToken(null)
     setEmail(null)
   }

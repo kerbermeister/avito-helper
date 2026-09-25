@@ -5,6 +5,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { safeGetItem, safeSetItem } from './lib/storage'
 
 type Theme = 'light' | 'dark'
 
@@ -19,7 +20,7 @@ const ThemeContext = createContext<ThemeContextValue>({
 })
 
 function getInitialTheme(): Theme {
-  const saved = localStorage.getItem('avito_theme')
+  const saved = safeGetItem('avito_theme')
   if (saved === 'light' || saved === 'dark') return saved
   return window.matchMedia('(prefers-color-scheme: dark)').matches
     ? 'dark'
@@ -31,7 +32,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
-    localStorage.setItem('avito_theme', theme)
+    safeSetItem('avito_theme', theme)
   }, [theme])
 
   return (
