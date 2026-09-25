@@ -52,6 +52,10 @@ app:
     quality: ${IMAGE_QUALITY:0.85}
     # Сторона миниатюры (px)
     thumb-dimension: ${IMAGE_THUMB_DIMENSION:400}
+  gemini:
+    # Ключ Google AI Studio: https://aistudio.google.com/apikey
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-2.5-flash}
 
 springdoc:
   swagger-ui:

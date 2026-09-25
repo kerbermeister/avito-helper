@@ -9,6 +9,7 @@ import { useMicrophones } from '../hooks/useMicrophones'
 import { Button, Card, Input, Label, Spinner, Textarea } from '../components/ui'
 import { PhotoPicker } from '../components/PhotoPicker'
 import { invalidateImageCache } from '../components/AuthImage'
+import type { ListingParseResponse } from '../types'
 
 type VoiceField = 'title' | 'description' | 'price' | 'category'
 
@@ -102,19 +103,23 @@ export function ListingFormPage() {
     }
   }, [listing])
 
-  const voice = useVoice((text) => {
-    const field = voiceTargetRef.current
-    if (field === 'title') setTitle(text)
-    else if (field === 'description') setDescription(text)
-    else if (field === 'category') setCategory(text)
-    else if (field === 'price') {
-      const n = parsePrice(text)
-      if (n !== null) setPriceInput(String(n))
-      else setFormError('Не удалось распознать цену — введите вручную')
-    }
-    voiceTargetRef.current = null
-    setRecordingField(null)
-  })
+  const voice = useVoice(
+    (res: { text: string }) => {
+      const text = res.text
+      const field = voiceTargetRef.current
+      if (field === 'title') setTitle(text)
+      else if (field === 'description') setDescription(text)
+      else if (field === 'category') setCategory(text)
+      else if (field === 'price') {
+        const n = parsePrice(text)
+        if (n !== null) setPriceInput(String(n))
+        else setFormError('Не удалось распознать цену — введите вручную')
+      }
+      voiceTargetRef.current = null
+      setRecordingField(null)
+    },
+    (blob, filename) => api.transcribe(blob, filename),
+  )
 
   const toggleVoice = (field: VoiceField) => {
     if (recordingField === field) {
@@ -126,6 +131,23 @@ export function ListingFormPage() {
       setRecordingField(field)
       void voice.start(selectedId || undefined)
     }
+  }
+
+  // Надиктовать всё объявление целиком
+  const wholeVoice = useVoice(
+    (res: ListingParseResponse) => {
+      if (res.title) setTitle(res.title)
+      if (res.description) setDescription(res.description)
+      if (res.category) setCategory(res.category)
+      const n = parsePrice(res.rawText)
+      if (n !== null) setPriceInput(String(n))
+    },
+    (blob, filename) => api.parseListing(blob, filename),
+  )
+
+  const toggleWholeVoice = () => {
+    if (wholeVoice.recording) wholeVoice.stop()
+    else void wholeVoice.start(selectedId || undefined)
   }
 
   const addFiles = (newFiles: File[]) => {
@@ -254,6 +276,27 @@ export function ListingFormPage() {
         {editing ? 'Редактировать объявление' : 'Новое объявление'}
       </h1>
 
+      <button
+        type="button"
+        onClick={toggleWholeVoice}
+        className={
+          wholeVoice.recording
+            ? 'flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-500'
+            : 'flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-indigo-300 px-4 py-3 text-sm font-semibold text-indigo-600 transition hover:border-indigo-400 hover:bg-indigo-50 dark:border-indigo-500/40 dark:text-indigo-400 dark:hover:bg-indigo-500/10'
+        }
+      >
+        {wholeVoice.recording ? <Square size={18} /> : <Mic size={18} />}
+        {wholeVoice.recording ? 'Остановить' : 'Надиктовать всё объявление'}
+      </button>
+
+      {wholeVoice.recording && (
+        <div className="flex items-center gap-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-500/30 dark:bg-indigo-500/10">
+          <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-500" />
+          <span className="shrink-0 text-sm font-medium">Слушаю… расскажите о товаре</span>
+          <VoiceMeter level={wholeVoice.level} />
+        </div>
+      )}
+
       {/* Выбор микрофона: показываем только если есть устройства */}
       {devices.length >= 2 && (
         <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-zinc-400">
@@ -374,6 +417,7 @@ export function ListingFormPage() {
       </Card>
 
       {voice.error && <p className="text-sm text-amber-600">{voice.error}</p>}
+      {wholeVoice.error && <p className="text-sm text-amber-600">{wholeVoice.error}</p>}
       {formError && <p className="text-sm text-red-600">{formError}</p>}
 
       <div className="flex gap-3">

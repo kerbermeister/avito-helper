@@ -12,7 +12,8 @@ public record AppProperties(
         Storage storage,
         S3 s3,
         Stt stt,
-        Image image
+        Image image,
+        Gemini gemini
 ) {
 
     public record Admin(String email, String password) {
@@ -34,5 +35,8 @@ public record AppProperties(
     }
 
     public record Image(int maxDimension, float quality, int thumbDimension) {
+    }
+
+    public record Gemini(String apiKey, String model) {
     }
 }

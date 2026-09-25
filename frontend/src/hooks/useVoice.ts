@@ -1,7 +1,13 @@
 import { useRef, useState } from 'react'
-import { api } from '../lib/api'
 
-export function useVoice(onResult: (text: string) => void) {
+/**
+ * Хук записи с микрофона. `process` — функция, которая получает blob аудио и
+ * возвращает результат (например, api.transcribe или api.parseListing).
+ */
+export function useVoice<T>(
+  onResult: (result: T) => void,
+  process: (blob: Blob, filename: string) => Promise<T>,
+) {
   const [recording, setRecording] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [level, setLevel] = useState(0)
@@ -80,8 +86,8 @@ export function useVoice(onResult: (text: string) => void) {
         cleanup()
         try {
           const ext = recorder.mimeType?.includes('mp4') ? 'm4a' : 'webm'
-          const res = await api.transcribe(blob, `voice.${ext}`)
-          onResult(res.text)
+          const result = await process(blob, `voice.${ext}`)
+          onResult(result)
         } catch (e) {
           setError(e instanceof Error ? e.message : 'Не удалось распознать')
         }

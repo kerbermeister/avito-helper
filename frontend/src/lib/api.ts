@@ -1,6 +1,7 @@
 import type {
   AuthResponse,
   Listing,
+  ListingParseResponse,
   ListingPayload,
   ListingStatus,
   ListingSummary,
@@ -119,6 +120,15 @@ export const api = {
     const fd = new FormData()
     fd.append('file', blob, filename)
     return request<{ text: string }>('/transcribe', { method: 'POST', body: fd })
+  },
+
+  parseListing(blob: Blob, filename: string) {
+    const fd = new FormData()
+    fd.append('file', blob, filename)
+    return request<ListingParseResponse>('/listings/parse', {
+      method: 'POST',
+      body: fd,
+    })
   },
 
   async downloadArchive(listingId: number): Promise<void> {

@@ -47,4 +47,10 @@ public class GlobalExceptionHandler {
                         "Голосовой сервис недоступен — контейнер stt не запущен или ещё загружается",
                         Instant.now()));
     }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleIllegalState(IllegalStateException e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ApiError(503, "Service Unavailable", e.getMessage(), Instant.now()));
+    }
 }

@@ -57,3 +57,10 @@ export interface ListingPayload {
   priceKopecks: number
   category: string | null
 }
+
+export interface ListingParseResponse {
+  rawText: string
+  title: string
+  description: string
+  category: string | null
+}

@@ -38,6 +38,8 @@ services:
       STORAGE_TYPE: local
       STORAGE_LOCAL_DIR: /data/storage
       STT_URL: http://stt:8000
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
       JWT_SECRET: dev-secret-0123456789abcdef0123456789abcdef
       ADMIN_EMAIL: admin@example.com
       ADMIN_PASSWORD: change-me
