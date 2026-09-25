@@ -9,9 +9,8 @@ const STORAGE_KEY = 'avito_mic'
 
 /**
  * Список доступных микрофонов + выбранный (сохраняется в localStorage).
- * НЕ запрашивает доступ к микрофону при загрузке — чтобы не включать микрофон
- * просто от открытия формы. Названия устройств появляются после первого
- * реального использования надиктовки (когда браузер выдаёт разрешение).
+ * Безопасен в не-secure-контексте (обычный HTTP): navigator.mediaDevices там
+ * отсутствует, поэтому все обращения защищены.
  */
 export function useMicrophones() {
   const [devices, setDevices] = useState<MicDevice[]>([])
@@ -21,6 +20,7 @@ export function useMicrophones() {
 
   const refresh = async () => {
     try {
+      if (!navigator.mediaDevices?.enumerateDevices) return
       const all = await navigator.mediaDevices.enumerateDevices()
       setDevices(
         all
@@ -38,8 +38,14 @@ export function useMicrophones() {
   useEffect(() => {
     void refresh()
     const onChange = () => void refresh()
-    navigator.mediaDevices.addEventListener?.('devicechange', onChange)
-    return () => navigator.mediaDevices.removeEventListener?.('devicechange', onChange)
+    if (navigator.mediaDevices?.addEventListener) {
+      navigator.mediaDevices.addEventListener('devicechange', onChange)
+    }
+    return () => {
+      if (navigator.mediaDevices?.removeEventListener) {
+        navigator.mediaDevices.removeEventListener('devicechange', onChange)
+      }
+    }
   }, [])
 
   const setSelectedId = (id: string) => {

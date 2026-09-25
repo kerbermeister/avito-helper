@@ -30,6 +30,10 @@ export function useVoice(onResult: (text: string) => void) {
 
   const start = async (deviceId?: string) => {
     setError(null)
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError('Микрофон недоступен — нужен HTTPS или localhost')
+      return
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: deviceId ? { deviceId: { exact: deviceId } } : true,
