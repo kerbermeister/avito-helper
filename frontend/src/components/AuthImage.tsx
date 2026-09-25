@@ -4,6 +4,18 @@ import { cn } from '../lib/utils'
 
 const cache = new Map<string, string>()
 
+/** Сброс кэша одного изображения (или всего, если src не передан). */
+export function invalidateImageCache(src?: string) {
+  if (src) {
+    const url = cache.get(src)
+    if (url) URL.revokeObjectURL(url)
+    cache.delete(src)
+  } else {
+    for (const url of cache.values()) URL.revokeObjectURL(url)
+    cache.clear()
+  }
+}
+
 export function AuthImage({
   src,
   alt,

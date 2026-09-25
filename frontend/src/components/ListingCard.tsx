@@ -42,7 +42,7 @@ export function ListingCard({ listing }: { listing: ListingSummary }) {
               type="button"
               onClick={(e) => go(e, -1)}
               aria-label="Предыдущее фото"
-              className="absolute left-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition hover:bg-black/70 group-hover:opacity-100"
+              className="absolute left-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white transition hover:bg-black/70"
             >
               <ChevronLeft size={16} />
             </button>
@@ -50,11 +50,11 @@ export function ListingCard({ listing }: { listing: ListingSummary }) {
               type="button"
               onClick={(e) => go(e, 1)}
               aria-label="Следующее фото"
-              className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white opacity-0 transition hover:bg-black/70 group-hover:opacity-100"
+              className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white transition hover:bg-black/70"
             >
               <ChevronRight size={16} />
             </button>
-            <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1 opacity-0 transition group-hover:opacity-100">
+            <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
               {photoUrls.map((_, i) => (
                 <span
                   key={i}

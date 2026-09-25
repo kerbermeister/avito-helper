@@ -109,6 +109,12 @@ export const api = {
     })
   },
 
+  rotatePhoto(listingId: number, photoId: number) {
+    return request<PhotoDto>(`/listings/${listingId}/photos/${photoId}/rotate`, {
+      method: 'POST',
+    })
+  },
+
   transcribe(blob: Blob, filename: string) {
     const fd = new FormData()
     fd.append('file', blob, filename)

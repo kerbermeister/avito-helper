@@ -1,5 +1,5 @@
 import { useRef, type ChangeEvent } from 'react'
-import { Camera, Images, X } from 'lucide-react'
+import { Camera, Images, RotateCw, X } from 'lucide-react'
 import type { PhotoDto } from '../types'
 import { AuthImage } from './AuthImage'
 
@@ -9,7 +9,9 @@ interface PhotoPickerProps {
   previews: string[]
   onAdd: (files: File[]) => void
   onRemoveExisting: (photo: PhotoDto) => void
+  onRotateExisting: (photo: PhotoDto) => void
   onRemoveFile: (index: number) => void
+  onRotateFile: (index: number) => void
   max: number
 }
 
@@ -19,7 +21,9 @@ export function PhotoPicker({
   previews,
   onAdd,
   onRemoveExisting,
+  onRotateExisting,
   onRemoveFile,
+  onRotateFile,
   max,
 }: PhotoPickerProps) {
   const cameraRef = useRef<HTMLInputElement>(null)
@@ -49,6 +53,14 @@ export function PhotoPicker({
             >
               <X size={14} />
             </button>
+            <button
+              type="button"
+              onClick={() => onRotateExisting(p)}
+              className="absolute bottom-1.5 left-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+              aria-label="Повернуть"
+            >
+              <RotateCw size={14} />
+            </button>
           </div>
         ))}
         {files.map((_, i) => (
@@ -64,6 +76,14 @@ export function PhotoPicker({
               aria-label="Удалить"
             >
               <X size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onRotateFile(i)}
+              className="absolute bottom-1.5 left-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition hover:bg-black/80"
+              aria-label="Повернуть"
+            >
+              <RotateCw size={14} />
             </button>
           </div>
         ))}

@@ -55,6 +55,14 @@ public class PhotoController {
         }
     }
 
+    @PostMapping("/{photoId}/rotate")
+    public PhotoResponse rotatePhoto(@AuthenticationPrincipal UserDetails principal,
+                                     @PathVariable Long listingId,
+                                     @PathVariable Long photoId) throws IOException {
+        return listingService.rotatePhoto(
+                currentUserService.idOf(principal.getUsername()), listingId, photoId);
+    }
+
     @GetMapping("/{photoId}/thumb")
     public void serveThumb(@AuthenticationPrincipal UserDetails principal,
                            @PathVariable Long listingId,

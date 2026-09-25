@@ -41,6 +41,20 @@ public class ImageService {
         }
     }
 
+    public byte[] rotate90(byte[] input) {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            Thumbnails.of(new ByteArrayInputStream(input))
+                    .rotate(90)
+                    .outputFormat("jpg")
+                    .outputQuality(quality)
+                    .toOutputStream(out);
+            return out.toByteArray();
+        } catch (Exception e) {
+            return input;
+        }
+    }
+
     private byte[] resize(byte[] input, int maxDim, float q) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Thumbnails.of(new ByteArrayInputStream(input))

@@ -157,6 +157,37 @@ public class ListingService {
         return new PhotoStream(in, contentType, photo.getFileName());
     }
 
+    @Transactional
+    public PhotoResponse rotatePhoto(Long userId, Long listingId, Long photoId) throws IOException {
+        Listing listing = getOwned(userId, listingId);
+        Photo photo = listing.getPhotos().stream()
+                .filter(p -> p.getId().equals(photoId))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Фото не найдено"));
+
+        byte[] current;
+        try (InputStream in = storageService.get(photo.getStorageKey())) {
+            current = in.readAllBytes();
+        }
+
+        byte[] rotated = imageService.rotate90(current);
+        byte[] thumb = imageService.thumbnail(rotated);
+
+        storageService.put(photo.getStorageKey(), new ByteArrayInputStream(rotated), rotated.length, "image/jpeg");
+
+        String thumbKey = photo.getThumbKey();
+        if (thumbKey == null) {
+            thumbKey = photo.getStorageKey().replace(".jpg", "_thumb.jpg");
+            photo.setThumbKey(thumbKey);
+        }
+        storageService.put(thumbKey, new ByteArrayInputStream(thumb), thumb.length, "image/jpeg");
+
+        photo.setSizeBytes((long) rotated.length);
+        photo.setMimeType("image/jpeg");
+        photoRepository.save(photo);
+        return toPhotoResponse(listingId, photo);
+    }
+
     @Transactional(readOnly = true)
     public PhotoStream getPhotoThumbStream(Long userId, Long listingId, Long photoId) {
         Listing listing = getOwned(userId, listingId);

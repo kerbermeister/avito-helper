@@ -8,6 +8,7 @@ import { useVoice } from '../hooks/useVoice'
 import { useMicrophones } from '../hooks/useMicrophones'
 import { Button, Card, Input, Label, Spinner, Textarea } from '../components/ui'
 import { PhotoPicker } from '../components/PhotoPicker'
+import { invalidateImageCache } from '../components/AuthImage'
 
 type VoiceField = 'title' | 'description' | 'price' | 'category'
 
@@ -146,6 +147,45 @@ export function ListingFormPage() {
     mutationFn: (photoId: number) => api.deletePhoto(listingId!, photoId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['listing', listingId] }),
   })
+
+  const rotateMutation = useMutation({
+    mutationFn: (photoId: number) => api.rotatePhoto(listingId!, photoId),
+    onSuccess: (_data, photoId) => {
+      invalidateImageCache(`/api/listings/${listingId}/photos/${photoId}`)
+      invalidateImageCache(`/api/listings/${listingId}/photos/${photoId}/thumb`)
+      queryClient.invalidateQueries({ queryKey: ['listing', listingId] })
+    },
+  })
+
+  const rotateFile = async (index: number) => {
+    const file = files[index]
+    if (!file) return
+    try {
+      const bitmap = await createImageBitmap(file)
+      const canvas = document.createElement('canvas')
+      canvas.width = bitmap.height
+      canvas.height = bitmap.width
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.translate(canvas.width / 2, canvas.height / 2)
+      ctx.rotate(Math.PI / 2)
+      ctx.drawImage(bitmap, -bitmap.width / 2, -bitmap.height / 2)
+      bitmap.close()
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('rotate failed'))), 'image/jpeg', 0.9),
+      )
+      const rotated = new File([blob], file.name || 'photo.jpg', { type: 'image/jpeg' })
+      const nextPreviews = [...previews]
+      if (nextPreviews[index]) URL.revokeObjectURL(nextPreviews[index])
+      nextPreviews[index] = URL.createObjectURL(blob)
+      const nextFiles = [...files]
+      nextFiles[index] = rotated
+      setFiles(nextFiles)
+      setPreviews(nextPreviews)
+    } catch {
+      // ignore
+    }
+  }
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -326,7 +366,9 @@ export function ListingFormPage() {
           previews={previews}
           onAdd={addFiles}
           onRemoveExisting={(p) => deletePhotoMutation.mutate(p.id)}
+          onRotateExisting={(p) => rotateMutation.mutate(p.id)}
           onRemoveFile={removeFile}
+          onRotateFile={rotateFile}
           max={12}
         />
       </Card>
