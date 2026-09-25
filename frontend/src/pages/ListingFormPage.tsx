@@ -66,10 +66,16 @@ export function ListingFormPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
+  const listingId = id ? Number(id) : undefined
+  if (id && Number.isNaN(listingId)) {
+    navigate('/')
+    return null
+  }
+
   const { data: listing, isLoading } = useQuery({
-    queryKey: ['listing', id],
-    queryFn: () => api.getListing(Number(id)),
-    enabled: editing,
+    queryKey: ['listing', listingId],
+    queryFn: () => api.getListing(listingId!),
+    enabled: editing && !!listingId,
   })
 
   const [title, setTitle] = useState('')
@@ -82,6 +88,7 @@ export function ListingFormPage() {
   const [recordingField, setRecordingField] = useState<VoiceField | null>(null)
   const voiceTargetRef = useRef<VoiceField | null>(null)
 
+  // useMicrophones: безопасно даже если navigator.mediaDevices отсутствует
   const { devices, selectedId, setSelectedId, refresh: refreshMics } = useMicrophones()
 
   useEffect(() => {
@@ -110,8 +117,7 @@ export function ListingFormPage() {
   const toggleVoice = (field: VoiceField) => {
     if (recordingField === field) {
       voice.stop()
-      // после первого использования надиктовки браузер выдаёт разрешение —
-      // тогда и появляются человекочитаемые названия микрофонов
+      // После надиктовки можно обновить список микрофонов (появятся названия)
       void refreshMics()
     } else {
       voiceTargetRef.current = field
@@ -136,8 +142,8 @@ export function ListingFormPage() {
   }
 
   const deletePhotoMutation = useMutation({
-    mutationFn: (photoId: number) => api.deletePhoto(Number(id), photoId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['listing', id] }),
+    mutationFn: (photoId: number) => api.deletePhoto(listingId!, photoId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['listing', listingId] }),
   })
 
   const saveMutation = useMutation({
@@ -149,7 +155,7 @@ export function ListingFormPage() {
         category: category.trim() || null,
       }
       const saved = editing
-        ? await api.updateListing(Number(id), payload)
+        ? await api.updateListing(listingId!, payload)
         : await api.createListing(payload)
       for (const file of files) {
         await api.addPhoto(saved.id, file)
@@ -200,6 +206,7 @@ export function ListingFormPage() {
         {editing ? 'Редактировать объявление' : 'Новое объявление'}
       </h1>
 
+      {/* Выбор микрофона: показываем только если есть устройства */}
       {devices.length >= 2 && (
         <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-zinc-400">
           <Mic size={16} />
