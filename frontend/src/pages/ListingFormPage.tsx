@@ -13,34 +13,21 @@ type VoiceField = 'title' | 'description' | 'price' | 'category'
 
 function VoiceButton({
   recording,
-  onStart,
-  onStop,
+  onClick,
 }: {
   recording: boolean
-  onStart: () => void
-  onStop: () => void
+  onClick: () => void
 }) {
   return (
     <button
       type="button"
-      title="Удерживайте, чтобы надиктовать"
-      onPointerDown={(e) => {
-        e.preventDefault()
-        e.currentTarget.setPointerCapture(e.pointerId)
-        onStart()
-      }}
-      onPointerUp={(e) => {
-        e.preventDefault()
-        onStop()
-      }}
-      onPointerCancel={() => onStop()}
-      onContextMenu={(e) => e.preventDefault()}
+      onClick={onClick}
       className={
         recording
-          ? 'shrink-0 touch-none select-none rounded-xl bg-red-100 p-2.5 text-red-600 dark:bg-red-500/20 dark:text-red-400'
-          : 'shrink-0 touch-none select-none rounded-xl bg-slate-100 p-2.5 text-slate-500 hover:bg-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
+          ? 'shrink-0 rounded-xl bg-red-100 p-2.5 text-red-600 dark:bg-red-500/20 dark:text-red-400'
+          : 'shrink-0 rounded-xl bg-slate-100 p-2.5 text-slate-500 hover:bg-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
       }
-      aria-label="Надиктовать (удерживайте)"
+      aria-label="Надиктовать"
     >
       {recording ? <Square size={18} /> : <Mic size={18} />}
     </button>
@@ -120,14 +107,14 @@ export function ListingFormPage() {
     setRecordingField(null)
   })
 
-  const startVoice = (field: VoiceField) => {
-    voiceTargetRef.current = field
-    setRecordingField(field)
-    void voice.start(selectedId || undefined)
-  }
-
-  const stopVoice = () => {
-    voice.stop()
+  const toggleVoice = (field: VoiceField) => {
+    if (recordingField === field) {
+      voice.stop()
+    } else {
+      voiceTargetRef.current = field
+      setRecordingField(field)
+      void voice.start(selectedId || undefined)
+    }
   }
 
   const addFiles = (newFiles: File[]) => {
@@ -251,8 +238,7 @@ export function ListingFormPage() {
             />
             <VoiceButton
               recording={recordingField === 'title'}
-              onStart={() => startVoice('title')}
-              onStop={stopVoice}
+              onClick={() => toggleVoice('title')}
             />
           </div>
         </div>
@@ -269,8 +255,7 @@ export function ListingFormPage() {
             />
             <VoiceButton
               recording={recordingField === 'description'}
-              onStart={() => startVoice('description')}
-              onStop={stopVoice}
+              onClick={() => toggleVoice('description')}
             />
           </div>
         </div>
@@ -288,8 +273,7 @@ export function ListingFormPage() {
               />
               <VoiceButton
                 recording={recordingField === 'price'}
-                onStart={() => startVoice('price')}
-                onStop={stopVoice}
+                onClick={() => toggleVoice('price')}
               />
             </div>
           </div>
@@ -304,8 +288,7 @@ export function ListingFormPage() {
               />
               <VoiceButton
                 recording={recordingField === 'category'}
-                onStart={() => startVoice('category')}
-                onStop={stopVoice}
+                onClick={() => toggleVoice('category')}
               />
             </div>
           </div>
