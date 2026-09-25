@@ -27,6 +27,7 @@ export interface ListingSummary {
   updatedAt: string
   coverPhotoId: number | null
   photoCount: number
+  photoIds: number[]
 }
 
 export interface Listing {

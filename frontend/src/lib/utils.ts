@@ -14,6 +14,11 @@ export function formatDate(iso: string): string {
   })
 }
 
+/** Цена одним числом без форматирования: 250000 -> "2500", 250050 -> "2500.5". */
+export function priceToPlainNumber(kopecks: number): string {
+  return String(kopecks / 100)
+}
+
 export function formatPrice(kopecks: number): string {
   const rubles = kopecks / 100
   const hasKopecks = kopecks % 100 !== 0

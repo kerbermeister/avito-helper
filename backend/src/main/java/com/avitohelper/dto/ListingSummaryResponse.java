@@ -2,6 +2,7 @@ package com.avitohelper.dto;
 
 import com.avitohelper.domain.ListingStatus;
 import java.time.Instant;
+import java.util.List;
 
 public record ListingSummaryResponse(
         Long id,
@@ -13,6 +14,7 @@ public record ListingSummaryResponse(
         Instant createdAt,
         Instant updatedAt,
         Long coverPhotoId,
-        int photoCount
+        int photoCount,
+        List<Long> photoIds
 ) {
 }

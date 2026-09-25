@@ -22,6 +22,7 @@ export function AuthImage({
       setUrl(cached)
       return
     }
+    setUrl(null)
     api
       .getPhotoBlob(src)
       .then((blob) => {

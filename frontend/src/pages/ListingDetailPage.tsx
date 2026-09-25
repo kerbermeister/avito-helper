@@ -11,14 +11,20 @@ import {
   X,
 } from 'lucide-react'
 import { api } from '../lib/api'
-import { formatDate, formatPrice, STATUS_META, STATUS_ORDER } from '../lib/utils'
+import {
+  formatDate,
+  formatPrice,
+  priceToPlainNumber,
+  STATUS_META,
+  STATUS_ORDER,
+} from '../lib/utils'
 import type { ListingStatus } from '../types'
 import { AuthImage } from '../components/AuthImage'
-import { Button, Card, Spinner, StatusBadge } from '../components/ui'
+import { Button, Card, CopyButton, Spinner, StatusBadge } from '../components/ui'
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3">
+    <div className="flex items-center justify-between gap-4 px-5 py-3">
       <span className="text-sm text-slate-500 dark:text-zinc-400">{label}</span>
       <span className="text-sm font-medium text-slate-900 dark:text-zinc-100">{value}</span>
     </div>
@@ -123,12 +129,19 @@ export function ListingDetailPage() {
         </div>
       )}
 
-      <div className="text-3xl font-bold">{formatPrice(listing.priceKopecks)}</div>
+      <div className="flex items-center gap-2">
+        <div className="text-3xl font-bold">{formatPrice(listing.priceKopecks)}</div>
+        <CopyButton
+          text={priceToPlainNumber(listing.priceKopecks)}
+          iconOnly
+          label="Копировать цену"
+        />
+      </div>
 
       <Card className="divide-y divide-slate-100 dark:divide-zinc-800">
         <DetailRow label="Категория" value={listing.category ?? '—'} />
         <DetailRow label="Дата создания" value={formatDate(listing.createdAt)} />
-        <div className="flex items-center justify-between gap-4 py-3">
+        <div className="flex items-center justify-between gap-4 px-5 py-3">
           <span className="text-sm text-slate-500 dark:text-zinc-400">Статус</span>
           <select
             value={listing.status}
@@ -147,8 +160,11 @@ export function ListingDetailPage() {
 
       {listing.description && (
         <Card className="space-y-2 p-5">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-zinc-500">
-            Описание
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-zinc-500">
+              Описание
+            </div>
+            <CopyButton text={listing.description} label="Копировать" />
           </div>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-zinc-300">
             {listing.description}
@@ -177,7 +193,7 @@ export function ListingDetailPage() {
 
       {lightboxIndex !== null && listing.photos[lightboxIndex] && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black/95" onClick={closeLightbox}>
-          <div className="flex items-center justify-between p-4 text-white">
+          <div className="flex shrink-0 items-center justify-between p-4 text-white">
             <span className="text-sm">
               {lightboxIndex + 1} / {totalPhotos}
             </span>
@@ -190,7 +206,7 @@ export function ListingDetailPage() {
             </button>
           </div>
           <div
-            className="relative flex flex-1 items-center justify-center"
+            className="relative min-h-0 flex-1"
             onClick={(e) => e.stopPropagation()}
             onTouchStart={(e) => {
               touchStartX.current = e.touches[0].clientX
@@ -205,7 +221,7 @@ export function ListingDetailPage() {
           >
             <AuthImage
               src={listing.photos[lightboxIndex].url}
-              className="max-h-full max-w-full object-contain"
+              className="h-full w-full object-contain"
             />
             {totalPhotos > 1 && (
               <>
@@ -214,7 +230,7 @@ export function ListingDetailPage() {
                     e.stopPropagation()
                     prevPhoto()
                   }}
-                  className="absolute left-3 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
                   aria-label="Предыдущее"
                 >
                   <ChevronLeft size={28} />
@@ -224,7 +240,7 @@ export function ListingDetailPage() {
                     e.stopPropagation()
                     nextPhoto()
                   }}
-                  className="absolute right-3 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
                   aria-label="Следующее"
                 >
                   <ChevronRight size={28} />

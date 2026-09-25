@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import type {
   ButtonHTMLAttributes,
   HTMLAttributes,
@@ -5,6 +6,7 @@ import type {
   LabelHTMLAttributes,
   TextareaHTMLAttributes,
 } from 'react'
+import { Check, Copy } from 'lucide-react'
 import type { ListingStatus } from '../types'
 import { cn, STATUS_META } from '../lib/utils'
 
@@ -101,5 +103,50 @@ export function StatusBadge({ status }: { status: ListingStatus }) {
     >
       {STATUS_META[status].label}
     </span>
+  )
+}
+
+export function CopyButton({
+  text,
+  label = 'Копировать',
+  iconOnly = false,
+  className,
+}: {
+  text: string
+  label?: string
+  iconOnly?: boolean
+  className?: string
+}) {
+  const [copied, setCopied] = useState(false)
+  const timerRef = useRef<number | null>(null)
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      // буфер обмена недоступен — игнорируем
+    }
+    setCopied(true)
+    if (timerRef.current !== null) window.clearTimeout(timerRef.current)
+    timerRef.current = window.setTimeout(() => setCopied(false), 1500)
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className={cn(
+        'inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200',
+        className,
+      )}
+      aria-label="Копировать"
+    >
+      {copied ? (
+        <Check size={14} className="text-emerald-500" />
+      ) : (
+        <Copy size={14} />
+      )}
+      {!iconOnly && (copied ? 'Скопировано' : label)}
+    </button>
   )
 }

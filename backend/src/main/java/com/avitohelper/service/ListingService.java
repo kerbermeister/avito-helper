@@ -185,10 +185,9 @@ public class ListingService {
 
     private ListingSummaryResponse toSummary(Listing listing) {
         // N+1 допустимо для персонального инструмента с малым объёмом данных.
-        Long coverPhotoId = photoRepository.findFirstByListingIdOrderBySortOrderAsc(listing.getId())
-                .map(Photo::getId)
-                .orElse(null);
-        int photoCount = (int) photoRepository.countByListingId(listing.getId());
+        List<Photo> photos = photoRepository.findByListingIdOrderBySortOrderAsc(listing.getId());
+        Long coverPhotoId = photos.isEmpty() ? null : photos.get(0).getId();
+        List<Long> photoIds = photos.stream().map(Photo::getId).toList();
         return new ListingSummaryResponse(
                 listing.getId(),
                 listing.getTitle(),
@@ -199,7 +198,8 @@ public class ListingService {
                 listing.getCreatedAt(),
                 listing.getUpdatedAt(),
                 coverPhotoId,
-                photoCount
+                photos.size(),
+                photoIds
         );
     }
 
