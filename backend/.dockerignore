@@ -1,0 +1,7 @@
+target/*.original
+src/
+pom.xml
+.mvn/
+mvnw*
+Dockerfile
+.dockerignore

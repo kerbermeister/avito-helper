@@ -1,0 +1,8 @@
+.git
+.idea
+.vscode
+backend/target
+frontend/node_modules
+frontend/dist
+stt/__pycache__
+*.log

@@ -1,0 +1,62 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: avito_helper
+      POSTGRES_USER: avito
+      POSTGRES_PASSWORD: avito
+    ports:
+      - "5432:5432"
+    volumes:
+      - avito_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U avito"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Голосовой ввод (faster-whisper). При первом старте скачивает модель (~сотни МБ).
+  stt:
+    build: ./stt
+    environment:
+      WHISPER_MODEL: small
+      WHISPER_DEVICE: cpu
+      WHISPER_COMPUTE_TYPE: int8
+    ports:
+      - "8000:8000"
+    volumes:
+      - avito_whisper:/root/.cache
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/avito_helper
+      DB_USERNAME: avito
+      DB_PASSWORD: avito
+      STORAGE_TYPE: local
+      STORAGE_LOCAL_DIR: /data/storage
+      STT_URL: http://stt:8000
+      JWT_SECRET: dev-secret-0123456789abcdef0123456789abcdef
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: change-me
+    ports:
+      - "8080:8080"
+    volumes:
+      - avito_storage:/data/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  avito_pgdata:
+  avito_storage:
+  avito_whisper:
