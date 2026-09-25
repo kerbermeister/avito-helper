@@ -8,7 +8,7 @@ import { StatusBadge } from './ui'
 
 export function ListingCard({ listing }: { listing: ListingSummary }) {
   const photoUrls = listing.photoIds.map(
-    (pid) => `/api/listings/${listing.id}/photos/${pid}`,
+    (pid) => `/api/listings/${listing.id}/photos/${pid}/thumb`,
   )
   const [index, setIndex] = useState(0)
   const hasMultiple = photoUrls.length > 1

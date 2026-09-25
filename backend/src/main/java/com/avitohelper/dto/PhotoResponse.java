@@ -9,6 +9,7 @@ public record PhotoResponse(
         Long sizeBytes,
         Integer sortOrder,
         Instant createdAt,
-        String url
+        String url,
+        String thumbUrl
 ) {
 }

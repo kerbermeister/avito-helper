@@ -14,6 +14,7 @@ export interface PhotoDto {
   sortOrder: number
   createdAt: string
   url: string
+  thumbUrl: string
 }
 
 export interface ListingSummary {

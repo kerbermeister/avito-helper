@@ -11,7 +11,8 @@ public record AppProperties(
         Jwt jwt,
         Storage storage,
         S3 s3,
-        Stt stt
+        Stt stt,
+        Image image
 ) {
 
     public record Admin(String email, String password) {
@@ -30,5 +31,8 @@ public record AppProperties(
     }
 
     public record Stt(String url) {
+    }
+
+    public record Image(int maxDimension, float quality, int thumbDimension) {
     }
 }

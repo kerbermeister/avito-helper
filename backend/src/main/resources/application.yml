@@ -46,6 +46,12 @@ app:
     bucket: ${S3_BUCKET:avito-helper}
   stt:
     url: ${STT_URL:http://localhost:8000}
+  image:
+    # Сжатие загружаемых фото: максимальная сторона (px) и качество JPEG (0..1)
+    max-dimension: ${IMAGE_MAX_DIMENSION:1600}
+    quality: ${IMAGE_QUALITY:0.85}
+    # Сторона миниатюры (px)
+    thumb-dimension: ${IMAGE_THUMB_DIMENSION:400}
 
 springdoc:
   swagger-ui:

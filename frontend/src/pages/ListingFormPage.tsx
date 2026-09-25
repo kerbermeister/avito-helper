@@ -86,6 +86,7 @@ export function ListingFormPage() {
   const [previews, setPreviews] = useState<string[]>([])
   const [formError, setFormError] = useState<string | null>(null)
   const [recordingField, setRecordingField] = useState<VoiceField | null>(null)
+  const [saveProgress, setSaveProgress] = useState('')
   const voiceTargetRef = useRef<VoiceField | null>(null)
 
   // useMicrophones: безопасно даже если navigator.mediaDevices отсутствует
@@ -154,11 +155,15 @@ export function ListingFormPage() {
         priceKopecks: rublesInputToKopecks(priceInput),
         category: category.trim() || null,
       }
+      setSaveProgress(editing ? 'Сохранение…' : 'Создание объявления…')
       const saved = editing
         ? await api.updateListing(listingId!, payload)
         : await api.createListing(payload)
-      for (const file of files) {
-        await api.addPhoto(saved.id, file)
+      if (files.length > 0) {
+        for (let i = 0; i < files.length; i++) {
+          setSaveProgress(`Загрузка фото ${i + 1} из ${files.length}…`)
+          await api.addPhoto(saved.id, files[i])
+        }
       }
       return saved
     },
@@ -169,6 +174,9 @@ export function ListingFormPage() {
     },
     onError: (err) => {
       setFormError(err instanceof Error ? err.message : 'Ошибка сохранения')
+    },
+    onSettled: () => {
+      setSaveProgress('')
     },
   })
 
@@ -334,6 +342,17 @@ export function ListingFormPage() {
           Отмена
         </Button>
       </div>
+
+      {saveMutation.isPending && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-8 py-6 shadow-xl dark:bg-zinc-900">
+            <Spinner />
+            <div className="text-sm font-medium text-slate-700 dark:text-zinc-200">
+              {saveProgress || 'Сохранение…'}
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   )
 }

@@ -93,6 +93,13 @@
             <version>${awssdk.version}</version>
         </dependency>
 
+        <!-- Обработка изображений (сжатие + миниатюры) -->
+        <dependency>
+            <groupId>net.coobird</groupId>
+            <artifactId>thumbnailator</artifactId>
+            <version>0.4.20</version>
+        </dependency>
+
         <!-- OpenAPI / Swagger UI -->
         <dependency>
             <groupId>org.springdoc</groupId>

@@ -40,7 +40,7 @@ export function PhotoPicker({
             key={p.id}
             className="group relative aspect-square overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200 dark:bg-zinc-800 dark:ring-zinc-700"
           >
-            <AuthImage src={p.url} className="h-full w-full" />
+            <AuthImage src={p.thumbUrl} className="h-full w-full" />
             <button
               type="button"
               onClick={() => onRemoveExisting(p)}

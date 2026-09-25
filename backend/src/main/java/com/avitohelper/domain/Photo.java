@@ -27,6 +27,9 @@ public class Photo {
     @Column(name = "storage_key", nullable = false, length = 512)
     private String storageKey;
 
+    @Column(name = "thumb_key", length = 512)
+    private String thumbKey;
+
     @Column(name = "file_name", length = 255)
     private String fileName;
 
@@ -69,6 +72,14 @@ public class Photo {
 
     public void setStorageKey(String storageKey) {
         this.storageKey = storageKey;
+    }
+
+    public String getThumbKey() {
+        return thumbKey;
+    }
+
+    public void setThumbKey(String thumbKey) {
+        this.thumbKey = thumbKey;
     }
 
     public String getFileName() {

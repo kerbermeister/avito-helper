@@ -55,6 +55,21 @@ public class PhotoController {
         }
     }
 
+    @GetMapping("/{photoId}/thumb")
+    public void serveThumb(@AuthenticationPrincipal UserDetails principal,
+                           @PathVariable Long listingId,
+                           @PathVariable Long photoId,
+                           HttpServletResponse response) throws IOException {
+        PhotoStream stream = listingService.getPhotoThumbStream(
+                currentUserService.idOf(principal.getUsername()), listingId, photoId);
+        response.setContentType(stream.contentType());
+        response.setHeader("Content-Disposition", "inline");
+        response.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        try (InputStream in = stream.inputStream()) {
+            in.transferTo(response.getOutputStream());
+        }
+    }
+
     @GetMapping("/archive")
     public void archive(@AuthenticationPrincipal UserDetails principal,
                         @PathVariable Long listingId,

@@ -124,7 +124,7 @@ export function ListingDetailPage() {
               onClick={() => setLightboxIndex(i)}
               className="aspect-square overflow-hidden rounded-xl ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-zinc-800"
             >
-              <AuthImage src={p.url} className="h-full w-full" />
+              <AuthImage src={p.thumbUrl} className="h-full w-full" />
             </button>
           ))}
         </div>

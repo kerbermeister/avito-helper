@@ -12,6 +12,7 @@ import com.avitohelper.exception.NotFoundException;
 import com.avitohelper.repository.ListingRepository;
 import com.avitohelper.repository.PhotoRepository;
 import com.avitohelper.storage.StorageService;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -32,13 +33,16 @@ public class ListingService {
     private final ListingRepository listingRepository;
     private final PhotoRepository photoRepository;
     private final StorageService storageService;
+    private final ImageService imageService;
 
     public ListingService(ListingRepository listingRepository,
                           PhotoRepository photoRepository,
-                          StorageService storageService) {
+                          StorageService storageService,
+                          ImageService imageService) {
         this.listingRepository = listingRepository;
         this.photoRepository = photoRepository;
         this.storageService = storageService;
+        this.imageService = imageService;
     }
 
     @Transactional(readOnly = true)
@@ -85,6 +89,9 @@ public class ListingService {
         Listing listing = getOwned(userId, id);
         for (Photo photo : listing.getPhotos()) {
             storageService.delete(photo.getStorageKey());
+            if (photo.getThumbKey() != null) {
+                storageService.delete(photo.getThumbKey());
+            }
         }
         listingRepository.delete(listing);
     }
@@ -100,17 +107,25 @@ public class ListingService {
         }
 
         String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "photo";
-        String contentType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
-        String key = "listings/" + listingId + "/" + UUID.randomUUID() + "-" + filename;
 
-        storageService.put(key, file.getInputStream(), file.getSize(), contentType);
+        byte[] original = file.getBytes();
+        byte[] compressed = imageService.compress(original);
+        byte[] thumb = imageService.thumbnail(original);
+
+        String base = "listings/" + listingId + "/" + UUID.randomUUID();
+        String key = base + ".jpg";
+        String thumbKey = base + "_thumb.jpg";
+
+        storageService.put(key, new ByteArrayInputStream(compressed), compressed.length, "image/jpeg");
+        storageService.put(thumbKey, new ByteArrayInputStream(thumb), thumb.length, "image/jpeg");
 
         Photo photo = new Photo();
         photo.setListing(listing);
         photo.setStorageKey(key);
+        photo.setThumbKey(thumbKey);
         photo.setFileName(filename);
-        photo.setMimeType(contentType);
-        photo.setSizeBytes(file.getSize());
+        photo.setMimeType("image/jpeg");
+        photo.setSizeBytes((long) compressed.length);
         photo.setSortOrder(currentCount + 1);
 
         return toPhotoResponse(listingId, photoRepository.save(photo));
@@ -124,6 +139,9 @@ public class ListingService {
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException("Фото не найдено"));
         storageService.delete(photo.getStorageKey());
+        if (photo.getThumbKey() != null) {
+            storageService.delete(photo.getThumbKey());
+        }
         // orphanRemoval=true удалит фото из БД после удаления из коллекции
         listing.getPhotos().remove(photo);
     }
@@ -137,6 +155,17 @@ public class ListingService {
         InputStream in = storageService.get(photo.getStorageKey());
         String contentType = photo.getMimeType() != null ? photo.getMimeType() : "image/jpeg";
         return new PhotoStream(in, contentType, photo.getFileName());
+    }
+
+    @Transactional(readOnly = true)
+    public PhotoStream getPhotoThumbStream(Long userId, Long listingId, Long photoId) {
+        Listing listing = getOwned(userId, listingId);
+        Photo photo = photoRepository.findById(photoId)
+                .filter(p -> p.getListing().getId().equals(listingId))
+                .orElseThrow(() -> new NotFoundException("Фото не найдено"));
+        String key = photo.getThumbKey() != null ? photo.getThumbKey() : photo.getStorageKey();
+        InputStream in = storageService.get(key);
+        return new PhotoStream(in, "image/jpeg", photo.getFileName());
     }
 
     @Transactional(readOnly = true)
@@ -234,7 +263,8 @@ public class ListingService {
                 photo.getSizeBytes(),
                 photo.getSortOrder(),
                 photo.getCreatedAt(),
-                "/api/listings/" + listingId + "/photos/" + photo.getId()
+                "/api/listings/" + listingId + "/photos/" + photo.getId(),
+                "/api/listings/" + listingId + "/photos/" + photo.getId() + "/thumb"
         );
     }
 }
