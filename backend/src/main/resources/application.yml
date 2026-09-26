@@ -55,7 +55,7 @@ app:
   gemini:
     # Ключ Google AI Studio: https://aistudio.google.com/apikey
     api-key: ${GEMINI_API_KEY:}
-    model: ${GEMINI_MODEL:gemini-2.5-flash}
+    model: ${GEMINI_MODEL:gemini-3.8-flash}
 
 springdoc:
   swagger-ui:

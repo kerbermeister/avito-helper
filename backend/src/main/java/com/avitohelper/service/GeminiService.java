@@ -7,6 +7,8 @@ import java.util.Map;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -36,12 +38,17 @@ public class GeminiService {
         String url = "https://generativelanguage.googleapis.com/v1beta/models/"
                 + model + ":generateContent?key=" + apiKey;
 
-        GeminiResponse response = restClient.post()
-                .uri(url)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(buildBody(text))
-                .retrieve()
-                .body(GeminiResponse.class);
+        GeminiResponse response;
+        try {
+            response = restClient.post()
+                    .uri(url)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(buildBody(text))
+                    .retrieve()
+                    .body(GeminiResponse.class);
+        } catch (RestClientResponseException e) {
+            throw new IllegalStateException(extractErrorMessage(e), e);
+        }
 
         if (response == null || response.candidates() == null || response.candidates().isEmpty()) {
             throw new IllegalStateException("Gemini вернул пустой ответ");
@@ -58,6 +65,22 @@ public class GeminiService {
         } catch (Exception e) {
             throw new IllegalStateException("Не удалось разобрать ответ Gemini: " + json, e);
         }
+    }
+
+    private String extractErrorMessage(RestClientResponseException e) {
+        try {
+            String body = e.getResponseBodyAsString();
+            if (body != null) {
+                JsonNode node = objectMapper.readTree(body);
+                String msg = node.path("error").path("message").asText();
+                if (msg != null && !msg.isBlank()) {
+                    return "Gemini: " + msg;
+                }
+            }
+        } catch (Exception ignore) {
+            // ignore
+        }
+        return "Gemini вернул ошибку (HTTP " + e.getStatusCode().value() + ")";
     }
 
     private Map<String, Object> buildBody(String text) {

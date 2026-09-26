@@ -5,7 +5,7 @@ import { useRef, useState } from 'react'
  * возвращает результат (например, api.transcribe или api.parseListing).
  */
 export function useVoice<T>(
-  onResult: (result: T) => void,
+  onResult: (result: T) => void | Promise<void>,
   process: (blob: Blob, filename: string) => Promise<T>,
 ) {
   const [recording, setRecording] = useState(false)
@@ -87,7 +87,7 @@ export function useVoice<T>(
         try {
           const ext = recorder.mimeType?.includes('mp4') ? 'm4a' : 'webm'
           const result = await process(blob, `voice.${ext}`)
-          onResult(result)
+          await onResult(result)
         } catch (e) {
           setError(e instanceof Error ? e.message : 'Не удалось распознать')
         }

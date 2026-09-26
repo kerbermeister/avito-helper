@@ -9,7 +9,6 @@ import { useMicrophones } from '../hooks/useMicrophones'
 import { Button, Card, Input, Label, Spinner, Textarea } from '../components/ui'
 import { PhotoPicker } from '../components/PhotoPicker'
 import { invalidateImageCache } from '../components/AuthImage'
-import type { ListingParseResponse } from '../types'
 
 type VoiceField = 'title' | 'description' | 'price' | 'category'
 
@@ -89,6 +88,7 @@ export function ListingFormPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [recordingField, setRecordingField] = useState<VoiceField | null>(null)
   const [saveProgress, setSaveProgress] = useState('')
+  const [wholeStage, setWholeStage] = useState<'recognizing' | 'structuring' | null>(null)
   const voiceTargetRef = useRef<VoiceField | null>(null)
 
   // useMicrophones: безопасно даже если navigator.mediaDevices отсутствует
@@ -133,21 +133,33 @@ export function ListingFormPage() {
     }
   }
 
-  // Надиктовать всё объявление целиком
+  // Надиктовать всё объявление целиком (распознавание + структуризация)
   const wholeVoice = useVoice(
-    (res: ListingParseResponse) => {
-      if (res.title) setTitle(res.title)
-      if (res.description) setDescription(res.description)
-      if (res.category) setCategory(res.category)
-      const n = parsePrice(res.rawText)
-      if (n !== null) setPriceInput(String(n))
+    async (res: { text: string }) => {
+      setWholeStage('structuring')
+      try {
+        const structured = await api.structureText(res.text)
+        if (structured.title) setTitle(structured.title)
+        if (structured.description) setDescription(structured.description)
+        if (structured.category) setCategory(structured.category)
+        const n = parsePrice(res.text)
+        if (n !== null) setPriceInput(String(n))
+      } catch (e) {
+        setFormError(e instanceof Error ? e.message : 'Ошибка распознавания')
+      } finally {
+        setWholeStage(null)
+      }
     },
-    (blob, filename) => api.parseListing(blob, filename),
+    (blob, filename) => api.transcribe(blob, filename),
   )
 
   const toggleWholeVoice = () => {
-    if (wholeVoice.recording) wholeVoice.stop()
-    else void wholeVoice.start(selectedId || undefined)
+    if (wholeVoice.recording) {
+      wholeVoice.stop()
+      setWholeStage('recognizing')
+    } else {
+      void wholeVoice.start(selectedId || undefined)
+    }
   }
 
   const addFiles = (newFiles: File[]) => {
@@ -294,6 +306,24 @@ export function ListingFormPage() {
           <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-500" />
           <span className="shrink-0 text-sm font-medium">Слушаю… расскажите о товаре</span>
           <VoiceMeter level={wholeVoice.level} />
+        </div>
+      )}
+
+      {wholeStage === 'recognizing' && (
+        <div className="flex items-center gap-3 rounded-xl bg-slate-100 px-4 py-3 dark:bg-zinc-800">
+          <Spinner />
+          <span className="text-sm font-medium text-slate-700 dark:text-zinc-200">
+            Распознаю речь…
+          </span>
+        </div>
+      )}
+
+      {wholeStage === 'structuring' && (
+        <div className="flex items-center gap-3 rounded-xl bg-slate-100 px-4 py-3 dark:bg-zinc-800">
+          <Spinner />
+          <span className="text-sm font-medium text-slate-700 dark:text-zinc-200">
+            Раскладываю по параметрам…
+          </span>
         </div>
       )}
 

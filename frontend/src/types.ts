@@ -58,8 +58,7 @@ export interface ListingPayload {
   category: string | null
 }
 
-export interface ListingParseResponse {
-  rawText: string
+export interface StructuredListing {
   title: string
   description: string
   category: string | null

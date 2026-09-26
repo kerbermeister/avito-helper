@@ -1,11 +1,11 @@
 import type {
   AuthResponse,
   Listing,
-  ListingParseResponse,
   ListingPayload,
   ListingStatus,
   ListingSummary,
   PhotoDto,
+  StructuredListing,
 } from '../types'
 
 import { safeGetItem, safeSetItem, safeRemoveItem } from './storage'
@@ -122,12 +122,10 @@ export const api = {
     return request<{ text: string }>('/transcribe', { method: 'POST', body: fd })
   },
 
-  parseListing(blob: Blob, filename: string) {
-    const fd = new FormData()
-    fd.append('file', blob, filename)
-    return request<ListingParseResponse>('/listings/parse', {
+  structureText(text: string) {
+    return request<StructuredListing>('/listings/structure', {
       method: 'POST',
-      body: fd,
+      body: JSON.stringify({ text }),
     })
   },
 
