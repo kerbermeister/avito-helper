@@ -4,7 +4,9 @@ WORKDIR /workspace
 COPY pom.xml ./
 COPY backend/pom.xml backend/pom.xml
 COPY backend/src backend/src
-RUN mvn -B -q -DskipTests package
+# Кэш зависимостей Maven живёт в BuildKit cache mount между сборками,
+# поэтому при изменениях только в коде повторного скачивания ~/.m2 нет.
+RUN --mount=type=cache,target=/root/.m2 mvn -B -q -DskipTests package
 
 # Запуск
 FROM eclipse-temurin:25-jre
