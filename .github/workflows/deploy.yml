@@ -54,6 +54,9 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            cd /opt/avito-helper/deploy
+            cd /opt/avito-helper
+            git checkout -- . 2>/dev/null || true
+            git pull --ff-only
+            cd deploy
             docker compose pull
             docker compose up -d --remove-orphans

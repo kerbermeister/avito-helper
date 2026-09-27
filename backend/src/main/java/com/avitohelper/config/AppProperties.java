@@ -13,7 +13,8 @@ public record AppProperties(
         S3 s3,
         Stt stt,
         Image image,
-        Gemini gemini
+        Gemini gemini,
+        OpenAi openAi
 ) {
 
     public record Admin(String email, String password) {
@@ -38,5 +39,8 @@ public record AppProperties(
     }
 
     public record Gemini(String apiKey, String model) {
+    }
+
+    public record OpenAi(String apiKey, String model) {
     }
 }

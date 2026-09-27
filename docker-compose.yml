@@ -40,6 +40,8 @@ services:
       STT_URL: http://stt:8000
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
       JWT_SECRET: dev-secret-0123456789abcdef0123456789abcdef
       ADMIN_EMAIL: admin@example.com
       ADMIN_PASSWORD: change-me
