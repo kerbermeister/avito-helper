@@ -8,5 +8,14 @@ import com.avitohelper.dto.StructuredListing;
  */
 public interface StructuringStrategy {
 
-    StructuredListing structure(String text);
+    /**
+     * Структурирует текст и по ходу дела сообщает слушателю о прогрессе
+     * (какой провайдер пробуется, кто упал и почему, кто сработал).
+     */
+    StructuredListing structure(String text, StructuringProgressListener listener);
+
+    /** Структуризация без отчёта о прогрессе. */
+    default StructuredListing structure(String text) {
+        return structure(text, StructuringProgressListener.NOOP);
+    }
 }

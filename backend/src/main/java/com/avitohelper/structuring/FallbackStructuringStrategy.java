@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component;
 /**
  * Проходит по провайдерам по очереди (в порядке @Order): если текущий упал —
  * пробует следующий. Если упали все — бросает ошибку последнего.
+ *
+ * <p>Каждая попытка, причина падения и итоговый успех отдаются в
+ * {@link StructuringProgressListener}, чтобы UI мог показать процесс.
  */
 @Component
 public class FallbackStructuringStrategy implements StructuringStrategy {
@@ -22,14 +25,19 @@ public class FallbackStructuringStrategy implements StructuringStrategy {
     }
 
     @Override
-    public StructuredListing structure(String text) {
+    public StructuredListing structure(String text, StructuringProgressListener listener) {
         RuntimeException lastError = null;
         for (StructuringProvider provider : providers) {
+            listener.onAttempt(provider.name());
             try {
-                return provider.structure(text);
+                StructuredListing result = provider.structure(text);
+                listener.onSuccess(provider.name());
+                return result;
             } catch (RuntimeException e) {
                 lastError = e;
-                log.warn("Провайдер «{}» не сработал: {}", provider.name(), e.getMessage());
+                String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                log.warn("Провайдер «{}» не сработал: {}", provider.name(), reason);
+                listener.onFailure(provider.name(), reason);
             }
         }
         if (lastError != null) {

@@ -1,6 +1,7 @@
 package com.avitohelper.config;
 
 import com.avitohelper.security.JwtAuthenticationFilter;
+import jakarta.servlet.DispatcherType;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +36,11 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // ASYNC — продолжение уже аутентифицированного запроса (SSE/SseEmitter).
+                        // JWT-фильтр (OncePerRequestFilter) на async-диспетче пропускается, и без
+                        // этого правила финальная отправка SSE-ответа падала с Access Denied,
+                        // когда ответ уже закоммичен (на фронт прилетал network error).
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/api/auth/**",

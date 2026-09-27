@@ -16,6 +16,10 @@ public class ListingStructuringService {
         this.strategy = strategy;
     }
 
+    public StructuredListing structure(String text, StructuringProgressListener listener) {
+        return strategy.structure(text, listener);
+    }
+
     public StructuredListing structure(String text) {
         return strategy.structure(text);
     }

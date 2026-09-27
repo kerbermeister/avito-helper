@@ -63,3 +63,9 @@ export interface StructuredListing {
   description: string
   category: string | null
 }
+
+/** События прогресса структуризации, которые стримит бэкенд (SSE). */
+export type StructuringProgress =
+  | { type: 'attempt'; provider: string }
+  | { type: 'failure'; provider: string; reason: string }
+  | { type: 'success'; provider: string }

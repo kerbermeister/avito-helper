@@ -9,6 +9,7 @@ import { useMicrophones } from '../hooks/useMicrophones'
 import { Button, Card, Input, Label, Spinner, Textarea } from '../components/ui'
 import { PhotoPicker } from '../components/PhotoPicker'
 import { invalidateImageCache } from '../components/AuthImage'
+import type { StructuringProgress } from '../types'
 
 type VoiceField = 'title' | 'description' | 'price' | 'category'
 
@@ -40,6 +41,26 @@ const FIELD_LABELS: Record<VoiceField, string> = {
   description: 'описание',
   price: 'цена',
   category: 'категория',
+}
+
+const PROVIDER_LABELS: Record<string, string> = {
+  gemini: 'Gemini',
+  openai: 'OpenAI',
+}
+
+const providerLabel = (name: string) => PROVIDER_LABELS[name] ?? (name || 'провайдер')
+
+/** Превращает событие прогресса структуризации в строку для лога на фронте. */
+function formatStructuringProgress(event: StructuringProgress): string {
+  const label = providerLabel(event.provider)
+  switch (event.type) {
+    case 'attempt':
+      return `Пробую провайдера «${label}»…`
+    case 'failure':
+      return `Не удалось структурировать через «${label}»: ${event.reason}`
+    case 'success':
+      return `Провайдер «${label}» успешно разложил ответ`
+  }
 }
 
 function VoiceMeter({ level }: { level: number }) {
@@ -89,6 +110,7 @@ export function ListingFormPage() {
   const [recordingField, setRecordingField] = useState<VoiceField | null>(null)
   const [saveProgress, setSaveProgress] = useState('')
   const [wholeStage, setWholeStage] = useState<'recognizing' | 'structuring' | null>(null)
+  const [structuringLog, setStructuringLog] = useState<string[]>([])
   const voiceTargetRef = useRef<VoiceField | null>(null)
 
   // useMicrophones: безопасно даже если navigator.mediaDevices отсутствует
@@ -136,16 +158,20 @@ export function ListingFormPage() {
   // Надиктовать всё объявление целиком (распознавание + структуризация)
   const wholeVoice = useVoice(
     async (res: { text: string }) => {
+      setFormError(null)
+      setStructuringLog([])
       setWholeStage('structuring')
       try {
-        const structured = await api.structureText(res.text)
+        const structured = await api.structureTextStream(res.text, (event) => {
+          setStructuringLog((prev) => [...prev, formatStructuringProgress(event)])
+        })
         if (structured.title) setTitle(structured.title)
         if (structured.description) setDescription(structured.description)
         if (structured.category) setCategory(structured.category)
         const n = parsePrice(res.text)
         if (n !== null) setPriceInput(String(n))
       } catch (e) {
-        setFormError(e instanceof Error ? e.message : 'Ошибка распознавания')
+        setFormError(e instanceof Error ? e.message : 'Ошибка структуризации')
       } finally {
         setWholeStage(null)
       }
@@ -318,12 +344,23 @@ export function ListingFormPage() {
         </div>
       )}
 
-      {wholeStage === 'structuring' && (
-        <div className="flex items-center gap-3 rounded-xl bg-slate-100 px-4 py-3 dark:bg-zinc-800">
-          <Spinner />
-          <span className="text-sm font-medium text-slate-700 dark:text-zinc-200">
-            Раскладываю по параметрам…
-          </span>
+      {(wholeStage === 'structuring' || structuringLog.length > 0) && (
+        <div className="space-y-2 rounded-xl bg-slate-100 px-4 py-3 dark:bg-zinc-800">
+          {wholeStage === 'structuring' && (
+            <div className="flex items-center gap-3">
+              <Spinner />
+              <span className="text-sm font-medium text-slate-700 dark:text-zinc-200">
+                Раскладываю по параметрам…
+              </span>
+            </div>
+          )}
+          {structuringLog.length > 0 && (
+            <ul className="ml-7 space-y-1 text-xs text-slate-500 dark:text-zinc-400">
+              {structuringLog.map((line, i) => (
+                <li key={i}>{line}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

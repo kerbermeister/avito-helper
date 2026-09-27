@@ -6,6 +6,7 @@ import type {
   ListingSummary,
   PhotoDto,
   StructuredListing,
+  StructuringProgress,
 } from '../types'
 
 import { safeGetItem, safeSetItem, safeRemoveItem } from './storage'
@@ -127,6 +128,108 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ text }),
     })
+  },
+
+  /**
+   * Структуризация с потоковым отчётом о прогрессе (SSE поверх fetch).
+   * `onProgress` вызывается по мере обработки провайдеров, а результатом
+   * промиса становится разложенное объявление.
+   */
+  async structureTextStream(
+    text: string,
+    onProgress: (event: StructuringProgress) => void,
+  ): Promise<StructuredListing> {
+    const token = getToken()
+    const res = await fetch('/api/listings/structure/stream', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ text }),
+    })
+
+    if (res.status === 401) {
+      clearToken()
+      window.dispatchEvent(new Event('avito:unauthorized'))
+    }
+    if (!res.ok || !res.body) {
+      let message = `Ошибка ${res.status}`
+      try {
+        const data = (await res.json()) as { message?: string }
+        if (data.message) message = data.message
+      } catch {
+        // ignore
+      }
+      throw new Error(message)
+    }
+
+    const state: { result: StructuredListing | null; error: string | null } = {
+      result: null,
+      error: null,
+    }
+
+    const handleBlock = (block: string) => {
+      let eventName = 'message'
+      const dataLines: string[] = []
+      for (const line of block.split('\n')) {
+        if (line.startsWith('event:')) eventName = line.slice(6).trim()
+        else if (line.startsWith('data:')) dataLines.push(line.slice(5).replace(/^ /, ''))
+      }
+      if (dataLines.length === 0) return
+      let data: Record<string, unknown>
+      try {
+        data = JSON.parse(dataLines.join('\n')) as Record<string, unknown>
+      } catch {
+        return
+      }
+      switch (eventName) {
+        case 'attempt':
+          onProgress({ type: 'attempt', provider: String(data.provider ?? '') })
+          break
+        case 'failure':
+          onProgress({
+            type: 'failure',
+            provider: String(data.provider ?? ''),
+            reason: String(data.reason ?? ''),
+          })
+          break
+        case 'success':
+          onProgress({ type: 'success', provider: String(data.provider ?? '') })
+          break
+        case 'result':
+          state.result = data as unknown as StructuredListing
+          break
+        case 'error':
+          state.error = String(data.message ?? 'Ошибка структуризации')
+          break
+      }
+    }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    const flush = (text: string) => {
+      buffer += text
+      let idx: number
+      while ((idx = buffer.indexOf('\n\n')) !== -1) {
+        const block = buffer.slice(0, idx)
+        buffer = buffer.slice(idx + 2)
+        handleBlock(block)
+      }
+    }
+
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (done) break
+      flush(decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n'))
+    }
+    flush(decoder.decode())
+    if (buffer.trim().length > 0) handleBlock(buffer)
+
+    if (state.result) return state.result
+    throw new Error(state.error ?? 'Не удалось структурировать объявление')
   },
 
   async downloadArchive(listingId: number): Promise<void> {
