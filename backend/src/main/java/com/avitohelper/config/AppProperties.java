@@ -32,7 +32,13 @@ public record AppProperties(
     public record S3(String endpoint, String region, String accessKey, String secretKey, String bucket) {
     }
 
-    public record Stt(String url) {
+    public record Stt(Local local, OpenAiStt openai) {
+
+        public record Local(boolean enabled, String url) {
+        }
+
+        public record OpenAiStt(boolean enabled, String apiKey, String model) {
+        }
     }
 
     public record Image(int maxDimension, float quality, int thumbDimension) {

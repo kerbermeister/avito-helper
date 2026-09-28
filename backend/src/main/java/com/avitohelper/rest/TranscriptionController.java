@@ -1,7 +1,7 @@
 package com.avitohelper.rest;
 
 import com.avitohelper.dto.TranscriptionResponse;
-import com.avitohelper.service.TranscriptionService;
+import com.avitohelper.transcription.TranscriptionService;
 import java.io.IOException;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;

@@ -45,7 +45,15 @@ app:
     secret-key: ${S3_SECRET_KEY:minioadmin}
     bucket: ${S3_BUCKET:avito-helper}
   stt:
-    url: ${STT_URL:http://localhost:8000}
+    # Локальное распознавание (контейнер faster-whisper)
+    local:
+      enabled: ${STT_LOCAL_ENABLED:true}
+      url: ${STT_URL:http://localhost:8000}
+    # Распознавание через OpenAI (gpt-4o-mini-transcribe)
+    openai:
+      enabled: ${STT_OPENAI_ENABLED:false}
+      api-key: ${OPENAI_API_KEY:}
+      model: ${OPENAI_STT_MODEL:gpt-4o-mini-transcribe}
   image:
     # Сжатие загружаемых фото: максимальная сторона (px) и качество JPEG (0..1)
     max-dimension: ${IMAGE_MAX_DIMENSION:1600}
