@@ -329,6 +329,10 @@ export function ListingFormPage() {
       return
     }
     const total = (listing?.photos.length ?? 0) + files.length
+    if (total === 0) {
+      setFormError('Добавьте хотя бы одно фото')
+      return
+    }
     if (total > 12) {
       setFormError('Не больше 12 фото')
       return
@@ -547,7 +551,9 @@ export function ListingFormPage() {
 
       <Card className="space-y-3 p-5">
         <div className="flex items-center justify-between">
-          <Label>Фото (до 12)</Label>
+          <Label>
+            Фото (до 12) <span className="text-red-500">*</span>
+          </Label>
           <span className="text-xs text-slate-400">
             {((listing?.photos.length ?? 0) + files.length)} / 12
           </span>

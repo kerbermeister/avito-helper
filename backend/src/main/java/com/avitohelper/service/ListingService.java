@@ -77,6 +77,11 @@ public class ListingService {
     @Transactional
     public ListingResponse updateStatus(Long userId, Long id, ListingStatus status) {
         Listing listing = getOwned(userId, id);
+        // Нельзя переводить объявление в «готово»/«размещено» без фото
+        if ((status == ListingStatus.READY || status == ListingStatus.PUBLISHED)
+                && listing.getPhotos().isEmpty()) {
+            throw new IllegalArgumentException("Нельзя перевести объявление в этот статус без фото");
+        }
         listing.setStatus(status);
         if (status == ListingStatus.PUBLISHED && listing.getPublishedAt() == null) {
             listing.setPublishedAt(Instant.now());
