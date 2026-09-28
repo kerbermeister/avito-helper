@@ -38,6 +38,7 @@ services:
     memswap_limit: 512m
     environment:
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=50 -XX:InitialRAMPercentage=20 -XX:MaxMetaspaceSize=128m"
+      LOG_FILE: ${LOG_FILE:-/logs/avito-helper.log}
       DB_URL: jdbc:postgresql://postgres:5432/avito_helper
       DB_USERNAME: avito
       DB_PASSWORD: avito
@@ -57,6 +58,7 @@ services:
       - "8080:8080"
     volumes:
       - avito_storage:/data/storage
+      - ./log:/logs
     depends_on:
       postgres:
         condition: service_healthy

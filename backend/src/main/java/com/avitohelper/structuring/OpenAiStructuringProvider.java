@@ -4,6 +4,8 @@ import com.avitohelper.config.AppProperties;
 import com.avitohelper.dto.StructuredListing;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -14,6 +16,8 @@ import tools.jackson.databind.ObjectMapper;
 @Component
 @Order(2)
 public class OpenAiStructuringProvider implements StructuringProvider {
+
+    private static final Logger log = LoggerFactory.getLogger(OpenAiStructuringProvider.class);
 
     private static final String URL = "https://api.openai.com/v1/chat/completions";
 
@@ -72,6 +76,7 @@ public class OpenAiStructuringProvider implements StructuringProvider {
         if (cleaned.startsWith("```")) {
             cleaned = cleaned.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "");
         }
+        log.info("openai вернул JSON: {}", cleaned);
         try {
             return objectMapper.readValue(cleaned, StructuredListing.class);
         } catch (Exception e) {

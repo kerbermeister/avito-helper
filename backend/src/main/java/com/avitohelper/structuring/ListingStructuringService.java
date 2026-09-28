@@ -1,6 +1,8 @@
 package com.avitohelper.structuring;
 
 import com.avitohelper.dto.StructuredListing;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -10,6 +12,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class ListingStructuringService {
 
+    private static final Logger log = LoggerFactory.getLogger(ListingStructuringService.class);
+
     private final StructuringStrategy strategy;
 
     public ListingStructuringService(StructuringStrategy strategy) {
@@ -17,10 +21,14 @@ public class ListingStructuringService {
     }
 
     public StructuredListing structure(String text, StructuringProgressListener listener) {
-        return strategy.structure(text, listener);
+        log.info("Текст для структуризации (распознан голосом): {}", text);
+        StructuredListing result = strategy.structure(text, listener);
+        log.info("Результат структуризации LLM: title={}, description={}, category={}, price={}",
+                result.title(), result.description(), result.category(), result.price());
+        return result;
     }
 
     public StructuredListing structure(String text) {
-        return strategy.structure(text);
+        return structure(text, StructuringProgressListener.NOOP);
     }
 }

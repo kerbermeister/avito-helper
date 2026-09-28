@@ -68,3 +68,13 @@ app:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+
+logging:
+  # Файл логов. В Docker задаётся LOG_FILE=/logs/avito-helper.log,
+  # а папка ./log монтируется в контейнер как /logs.
+  file:
+    name: ${LOG_FILE:./log/avito-helper.log}
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7

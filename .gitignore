@@ -24,3 +24,5 @@ stt/__pycache__/
 
 # Logs
 *.log
+log/
+deploy/log/
