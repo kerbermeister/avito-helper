@@ -3,10 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Mic, Square } from 'lucide-react'
 import { api } from '../lib/api'
-import { cn, kopecksToRublesInput, parsePrice, rublesInputToKopecks } from '../lib/utils'
+import { kopecksToRublesInput, parsePrice, rublesInputToKopecks } from '../lib/utils'
 import { useVoice } from '../hooks/useVoice'
 import { useMicrophones } from '../hooks/useMicrophones'
-import { Button, Card, Input, Label, Spinner, Textarea } from '../components/ui'
+import { AutoGrowTextarea, Button, Card, Input, Label, Spinner } from '../components/ui'
+import { VoiceWave } from '../components/VoiceWave'
 import { PhotoPicker } from '../components/PhotoPicker'
 import { invalidateImageCache } from '../components/AuthImage'
 import type { StructuringProgress, TranscriptionProgress } from '../types'
@@ -77,25 +78,6 @@ function formatTranscriptionProgress(event: TranscriptionProgress): string {
   }
 }
 
-function VoiceMeter({ level }: { level: number }) {
-  const segments = 24
-  const active = Math.round(level * segments)
-  return (
-    <div className="flex flex-1 items-end gap-0.5">
-      {Array.from({ length: segments }).map((_, i) => (
-        <div
-          key={i}
-          className={cn(
-            'w-1 rounded-full transition-colors duration-75',
-            i < active ? 'bg-indigo-500' : 'bg-slate-200 dark:bg-zinc-700',
-          )}
-          style={{ height: `${8 + (i / segments) * 14}px` }}
-        />
-      ))}
-    </div>
-  )
-}
-
 export function ListingFormPage() {
   const { id } = useParams()
   const editing = Boolean(id)
@@ -121,6 +103,7 @@ export function ListingFormPage() {
     staleTime: Infinity,
   })
   const maxRecordingSeconds = appConfig?.maxRecordingSeconds
+  const minSpeechLevel = appConfig?.minSpeechLevel
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -165,6 +148,12 @@ export function ListingFormPage() {
   const voice = useVoice(
     (text: string) => {
       const field = voiceTargetRef.current
+      voiceTargetRef.current = null
+      setRecordingField(null)
+      if (!text.trim()) {
+        setFormError('Речь не распознана — попробуйте ещё раз')
+        return
+      }
       if (field === 'title') setTitle(text)
       else if (field === 'description') setDescription(text)
       else if (field === 'category') setCategory(text)
@@ -173,11 +162,10 @@ export function ListingFormPage() {
         if (n !== null) setPriceInput(String(n))
         else setFormError('Не удалось распознать цену — введите вручную')
       }
-      voiceTargetRef.current = null
-      setRecordingField(null)
     },
     processAudio,
     maxRecordingSeconds,
+    minSpeechLevel,
   )
 
   const toggleVoice = (field: VoiceField) => {
@@ -196,6 +184,10 @@ export function ListingFormPage() {
   const wholeVoice = useVoice(
     async (text: string) => {
       setFormError(null)
+      if (!text.trim()) {
+        setFormError('Речь не распознана — попробуйте ещё раз')
+        return
+      }
       setStructuringLog([])
       setWholeStage('structuring')
       try {
@@ -216,6 +208,7 @@ export function ListingFormPage() {
     },
     processAudio,
     maxRecordingSeconds,
+    minSpeechLevel,
   )
 
   const toggleWholeVoice = () => {
@@ -366,15 +359,19 @@ export function ListingFormPage() {
       </button>
 
       {wholeVoice.recording && (
-        <div className="flex items-center gap-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-500/30 dark:bg-indigo-500/10">
-          <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-500" />
-          <span className="shrink-0 text-sm font-medium">Слушаю… расскажите о товаре</span>
-          <VoiceMeter level={wholeVoice.level} />
-          {wholeVoice.remaining != null && (
-            <span className="shrink-0 text-sm font-medium tabular-nums text-slate-500 dark:text-zinc-400">
-              {wholeVoice.remaining} с
-            </span>
-          )}
+        <div className="space-y-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-500/30 dark:bg-indigo-500/10">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-500" />
+              <span className="truncate text-sm font-medium">Слушаю… расскажите о товаре</span>
+            </div>
+            {wholeVoice.remaining != null && (
+              <span className="shrink-0 text-sm font-medium tabular-nums text-slate-500 dark:text-zinc-400">
+                {wholeVoice.remaining} с
+              </span>
+            )}
+          </div>
+          <VoiceWave active readWaveform={wholeVoice.readWaveform} />
         </div>
       )}
 
@@ -439,28 +436,33 @@ export function ListingFormPage() {
       )}
 
       {voice.recording && recordingField && (
-        <div className="flex items-center gap-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-500/30 dark:bg-indigo-500/10">
-          <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-500" />
-          <span className="shrink-0 text-sm font-medium">
-            Запись: {FIELD_LABELS[recordingField]}
-          </span>
-          <VoiceMeter level={voice.level} />
-          {voice.remaining != null && (
-            <span className="shrink-0 text-sm font-medium tabular-nums text-slate-500 dark:text-zinc-400">
-              {voice.remaining} с
-            </span>
-          )}
+        <div className="space-y-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-500/30 dark:bg-indigo-500/10">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-500" />
+              <span className="truncate text-sm font-medium">
+                Запись: {FIELD_LABELS[recordingField]}
+              </span>
+            </div>
+            {voice.remaining != null && (
+              <span className="shrink-0 text-sm font-medium tabular-nums text-slate-500 dark:text-zinc-400">
+                {voice.remaining} с
+              </span>
+            )}
+          </div>
+          <VoiceWave active readWaveform={voice.readWaveform} />
         </div>
       )}
 
       <Card className="space-y-4 p-5">
         <div className="space-y-1.5">
           <Label htmlFor="title">Название</Label>
-          <div className="flex gap-2">
-            <Input
+          <div className="flex items-start gap-2">
+            <AutoGrowTextarea
               id="title"
+              rows={1}
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => setTitle(e.target.value.replace(/\n/g, ' '))}
               placeholder="Например, iPhone 15 Pro"
             />
             <VoiceButton
@@ -473,7 +475,7 @@ export function ListingFormPage() {
         <div className="space-y-1.5">
           <Label htmlFor="description">Описание</Label>
           <div className="flex items-start gap-2">
-            <Textarea
+            <AutoGrowTextarea
               id="description"
               rows={4}
               value={description}

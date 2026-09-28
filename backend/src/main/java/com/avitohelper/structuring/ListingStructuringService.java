@@ -21,6 +21,10 @@ public class ListingStructuringService {
     }
 
     public StructuredListing structure(String text, StructuringProgressListener listener) {
+        if (text == null || text.isBlank()) {
+            log.info("Пустой текст распознавания — структуризацию пропускаю, чтобы LLM ничего не выдумывал");
+            return new StructuredListing(null, null, null, null);
+        }
         log.info("Текст для структуризации (распознан голосом): {}", text);
         StructuredListing result = strategy.structure(text, listener);
         log.info("Результат структуризации LLM: title={}, description={}, category={}, price={}",

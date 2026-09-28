@@ -21,6 +21,8 @@ public class ConfigController {
 
     @GetMapping
     public AppConfigResponse get() {
-        return new AppConfigResponse(props.voice().maxRecordingSeconds());
+        return new AppConfigResponse(
+                props.voice().maxRecordingSeconds(),
+                props.voice().minSpeechLevel());
     }
 }

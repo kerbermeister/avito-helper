@@ -45,7 +45,7 @@ public record AppProperties(
     public record Image(int maxDimension, float quality, int thumbDimension) {
     }
 
-    public record Voice(int maxRecordingSeconds) {
+    public record Voice(int maxRecordingSeconds, double minSpeechLevel) {
     }
 
     public record Gemini(boolean enabled, String apiKey, String model) {

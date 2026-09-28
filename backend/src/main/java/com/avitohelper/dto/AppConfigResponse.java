@@ -1,4 +1,4 @@
 package com.avitohelper.dto;
 
-public record AppConfigResponse(int maxRecordingSeconds) {
+public record AppConfigResponse(int maxRecordingSeconds, double minSpeechLevel) {
 }

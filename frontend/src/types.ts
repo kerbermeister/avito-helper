@@ -54,6 +54,7 @@ export interface AuthResponse {
 /** Публичные настройки приложения с бэкенда. */
 export interface AppConfig {
   maxRecordingSeconds: number
+  minSpeechLevel: number
 }
 
 export interface ListingPayload {
