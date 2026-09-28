@@ -104,6 +104,7 @@ export function ListingFormPage() {
   })
   const maxRecordingSeconds = appConfig?.maxRecordingSeconds
   const minSpeechLevel = appConfig?.minSpeechLevel
+  const fieldDictationEnabled = appConfig?.fieldDictationEnabled ?? true
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -318,6 +319,10 @@ export function ListingFormPage() {
       setFormError('Введите название')
       return
     }
+    if (!description.trim()) {
+      setFormError('Введите описание')
+      return
+    }
     const kopecks = rublesInputToKopecks(priceInput)
     if (Number.isNaN(kopecks) || kopecks <= 0) {
       setFormError('Укажите корректную цену')
@@ -350,11 +355,13 @@ export function ListingFormPage() {
         onClick={toggleWholeVoice}
         className={
           wholeVoice.recording
-            ? 'flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-500'
-            : 'flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-indigo-300 px-4 py-3 text-sm font-semibold text-indigo-600 transition hover:border-indigo-400 hover:bg-indigo-50 dark:border-indigo-500/40 dark:text-indigo-400 dark:hover:bg-indigo-500/10'
+            ? 'flex w-full items-center justify-center gap-3 rounded-2xl bg-red-600 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-red-600/25 transition active:scale-[0.99] hover:bg-red-500'
+            : 'flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-4 text-base font-semibold text-white shadow-lg shadow-indigo-600/25 transition active:scale-[0.99] hover:from-indigo-500 hover:to-violet-500'
         }
       >
-        {wholeVoice.recording ? <Square size={18} /> : <Mic size={18} />}
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
+          {wholeVoice.recording ? <Square size={18} /> : <Mic size={20} />}
+        </span>
         {wholeVoice.recording ? 'Остановить' : 'Надиктовать всё объявление'}
       </button>
 
@@ -456,7 +463,9 @@ export function ListingFormPage() {
 
       <Card className="space-y-4 p-5">
         <div className="space-y-1.5">
-          <Label htmlFor="title">Название</Label>
+          <Label htmlFor="title">
+            Название <span className="text-red-500">*</span>
+          </Label>
           <div className="flex items-start gap-2">
             <AutoGrowTextarea
               id="title"
@@ -465,15 +474,19 @@ export function ListingFormPage() {
               onChange={(e) => setTitle(e.target.value.replace(/\n/g, ' '))}
               placeholder="Например, iPhone 15 Pro"
             />
-            <VoiceButton
-              recording={recordingField === 'title'}
-              onClick={() => toggleVoice('title')}
-            />
+            {fieldDictationEnabled && (
+              <VoiceButton
+                recording={recordingField === 'title'}
+                onClick={() => toggleVoice('title')}
+              />
+            )}
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="description">Описание</Label>
+          <Label htmlFor="description">
+            Описание <span className="text-red-500">*</span>
+          </Label>
           <div className="flex items-start gap-2">
             <AutoGrowTextarea
               id="description"
@@ -482,16 +495,20 @@ export function ListingFormPage() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Состояние, комплектация…"
             />
-            <VoiceButton
-              recording={recordingField === 'description'}
-              onClick={() => toggleVoice('description')}
-            />
+            {fieldDictationEnabled && (
+              <VoiceButton
+                recording={recordingField === 'description'}
+                onClick={() => toggleVoice('description')}
+              />
+            )}
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="price">Цена, ₽</Label>
+            <Label htmlFor="price">
+              Цена, ₽ <span className="text-red-500">*</span>
+            </Label>
             <div className="flex gap-2">
               <Input
                 id="price"
@@ -500,10 +517,12 @@ export function ListingFormPage() {
                 onChange={(e) => setPriceInput(e.target.value)}
                 placeholder="1500"
               />
-              <VoiceButton
-                recording={recordingField === 'price'}
-                onClick={() => toggleVoice('price')}
-              />
+              {fieldDictationEnabled && (
+                <VoiceButton
+                  recording={recordingField === 'price'}
+                  onClick={() => toggleVoice('price')}
+                />
+              )}
             </div>
           </div>
           <div className="space-y-1.5">
@@ -515,10 +534,12 @@ export function ListingFormPage() {
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="Электроника"
               />
-              <VoiceButton
-                recording={recordingField === 'category'}
-                onClick={() => toggleVoice('category')}
-              />
+              {fieldDictationEnabled && (
+                <VoiceButton
+                  recording={recordingField === 'category'}
+                  onClick={() => toggleVoice('category')}
+                />
+              )}
             </div>
           </div>
         </div>

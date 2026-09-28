@@ -55,6 +55,7 @@ export interface AuthResponse {
 export interface AppConfig {
   maxRecordingSeconds: number
   minSpeechLevel: number
+  fieldDictationEnabled: boolean
 }
 
 export interface ListingPayload {

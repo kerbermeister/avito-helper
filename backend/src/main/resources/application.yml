@@ -65,6 +65,8 @@ app:
     max-recording-seconds: ${VOICE_MAX_RECORDING_SECONDS:45}
     # Порог уровня микрофона: ниже него запись считается тишиной и в STT не отправляется
     min-speech-level: ${VOICE_MIN_SPEECH_LEVEL:0.06}
+    # Показывать ли кнопки надиктовки у отдельных полей (название/описание/цена/категория)
+    field-dictation-enabled: ${VOICE_FIELD_DICTATION_ENABLED:true}
   gemini:
     # Включает/выключает провайдера структуризации (GEMINI_ENABLED=false — отключить)
     enabled: ${GEMINI_ENABLED:true}

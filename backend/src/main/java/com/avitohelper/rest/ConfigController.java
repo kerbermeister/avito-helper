@@ -23,6 +23,7 @@ public class ConfigController {
     public AppConfigResponse get() {
         return new AppConfigResponse(
                 props.voice().maxRecordingSeconds(),
-                props.voice().minSpeechLevel());
+                props.voice().minSpeechLevel(),
+                props.voice().fieldDictationEnabled());
     }
 }
