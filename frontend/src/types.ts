@@ -70,3 +70,9 @@ export type StructuringProgress =
   | { type: 'attempt'; provider: string }
   | { type: 'failure'; provider: string; reason: string }
   | { type: 'success'; provider: string }
+
+/** События прогресса распознавания речи, которые стримит бэкенд (SSE). */
+export type TranscriptionProgress =
+  | { type: 'attempt'; provider: string }
+  | { type: 'failure'; provider: string; reason: string }
+  | { type: 'success'; provider: string }

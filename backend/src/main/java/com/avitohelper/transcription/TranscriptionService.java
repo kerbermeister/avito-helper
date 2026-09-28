@@ -22,19 +22,27 @@ public class TranscriptionService {
     }
 
     public String transcribe(byte[] audio, String filename) {
+        return transcribe(audio, filename, TranscriptionProgressListener.NOOP);
+    }
+
+    public String transcribe(byte[] audio, String filename, TranscriptionProgressListener listener) {
         RuntimeException lastError = null;
         for (TranscriptionProvider provider : providers) {
             if (!provider.enabled()) {
                 log.info("Провайдер распознавания «{}» отключён — пропускаю", provider.name());
                 continue;
             }
+            listener.onAttempt(provider.name());
             try {
                 String text = provider.transcribe(audio, filename);
                 log.info("Распознавание речи через «{}»: {}", provider.name(), text);
+                listener.onSuccess(provider.name());
                 return text;
             } catch (RuntimeException e) {
                 lastError = e;
-                log.warn("Провайдер распознавания «{}» не сработал: {}", provider.name(), e.getMessage());
+                String reason = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+                log.warn("Провайдер распознавания «{}» не сработал: {}", provider.name(), reason);
+                listener.onFailure(provider.name(), reason);
             }
         }
         if (lastError != null) {

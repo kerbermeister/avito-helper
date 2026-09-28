@@ -9,7 +9,7 @@ import { useMicrophones } from '../hooks/useMicrophones'
 import { Button, Card, Input, Label, Spinner, Textarea } from '../components/ui'
 import { PhotoPicker } from '../components/PhotoPicker'
 import { invalidateImageCache } from '../components/AuthImage'
-import type { StructuringProgress } from '../types'
+import type { StructuringProgress, TranscriptionProgress } from '../types'
 
 type VoiceField = 'title' | 'description' | 'price' | 'category'
 
@@ -46,6 +46,7 @@ const FIELD_LABELS: Record<VoiceField, string> = {
 const PROVIDER_LABELS: Record<string, string> = {
   gemini: 'Gemini',
   openai: 'OpenAI',
+  local: 'Локальный Whisper',
 }
 
 const providerLabel = (name: string) => PROVIDER_LABELS[name] ?? (name || 'провайдер')
@@ -60,6 +61,19 @@ function formatStructuringProgress(event: StructuringProgress): string {
       return `Не удалось структурировать через «${label}»: ${event.reason}`
     case 'success':
       return `Провайдер «${label}» успешно разложил ответ`
+  }
+}
+
+/** Превращает событие прогресса распознавания речи в строку для лога. */
+function formatTranscriptionProgress(event: TranscriptionProgress): string {
+  const label = providerLabel(event.provider)
+  switch (event.type) {
+    case 'attempt':
+      return `Распознаю через «${label}»…`
+    case 'failure':
+      return `Не удалось распознать через «${label}»: ${event.reason}`
+    case 'success':
+      return `Распознано через «${label}»`
   }
 }
 
@@ -109,8 +123,10 @@ export function ListingFormPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [recordingField, setRecordingField] = useState<VoiceField | null>(null)
   const [saveProgress, setSaveProgress] = useState('')
-  const [wholeStage, setWholeStage] = useState<'recognizing' | 'structuring' | null>(null)
+  const [wholeStage, setWholeStage] = useState<'structuring' | null>(null)
   const [structuringLog, setStructuringLog] = useState<string[]>([])
+  const [recognizing, setRecognizing] = useState(false)
+  const [transcribeLog, setTranscribeLog] = useState<string[]>([])
   const voiceTargetRef = useRef<VoiceField | null>(null)
 
   // useMicrophones: безопасно даже если navigator.mediaDevices отсутствует
@@ -125,9 +141,21 @@ export function ListingFormPage() {
     }
   }, [listing])
 
+  // Распознавание речи с потоковым прогрессом (какой провайдер, успех/неуспех)
+  const processAudio = async (blob: Blob, filename: string) => {
+    setTranscribeLog([])
+    setRecognizing(true)
+    try {
+      return await api.transcribeStream(blob, filename, (event) => {
+        setTranscribeLog((prev) => [...prev, formatTranscriptionProgress(event)])
+      })
+    } finally {
+      setRecognizing(false)
+    }
+  }
+
   const voice = useVoice(
-    (res: { text: string }) => {
-      const text = res.text
+    (text: string) => {
       const field = voiceTargetRef.current
       if (field === 'title') setTitle(text)
       else if (field === 'description') setDescription(text)
@@ -140,7 +168,7 @@ export function ListingFormPage() {
       voiceTargetRef.current = null
       setRecordingField(null)
     },
-    (blob, filename) => api.transcribe(blob, filename),
+    processAudio,
   )
 
   const toggleVoice = (field: VoiceField) => {
@@ -157,12 +185,12 @@ export function ListingFormPage() {
 
   // Надиктовать всё объявление целиком (распознавание + структуризация)
   const wholeVoice = useVoice(
-    async (res: { text: string }) => {
+    async (text: string) => {
       setFormError(null)
       setStructuringLog([])
       setWholeStage('structuring')
       try {
-        const structured = await api.structureTextStream(res.text, (event) => {
+        const structured = await api.structureTextStream(text, (event) => {
           setStructuringLog((prev) => [...prev, formatStructuringProgress(event)])
         })
         if (structured.title) setTitle(structured.title)
@@ -177,13 +205,12 @@ export function ListingFormPage() {
         setWholeStage(null)
       }
     },
-    (blob, filename) => api.transcribe(blob, filename),
+    processAudio,
   )
 
   const toggleWholeVoice = () => {
     if (wholeVoice.recording) {
       wholeVoice.stop()
-      setWholeStage('recognizing')
     } else {
       void wholeVoice.start(selectedId || undefined)
     }
@@ -336,12 +363,23 @@ export function ListingFormPage() {
         </div>
       )}
 
-      {wholeStage === 'recognizing' && (
-        <div className="flex items-center gap-3 rounded-xl bg-slate-100 px-4 py-3 dark:bg-zinc-800">
-          <Spinner />
-          <span className="text-sm font-medium text-slate-700 dark:text-zinc-200">
-            Распознаю речь…
-          </span>
+      {(recognizing || transcribeLog.length > 0) && (
+        <div className="space-y-2 rounded-xl bg-slate-100 px-4 py-3 dark:bg-zinc-800">
+          {recognizing && (
+            <div className="flex items-center gap-3">
+              <Spinner />
+              <span className="text-sm font-medium text-slate-700 dark:text-zinc-200">
+                Распознаю речь…
+              </span>
+            </div>
+          )}
+          {transcribeLog.length > 0 && (
+            <ul className="ml-7 space-y-1 text-xs text-slate-500 dark:text-zinc-400">
+              {transcribeLog.map((line, i) => (
+                <li key={i}>{line}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
@@ -385,7 +423,7 @@ export function ListingFormPage() {
         </div>
       )}
 
-      {recordingField && (
+      {voice.recording && recordingField && (
         <div className="flex items-center gap-4 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 dark:border-indigo-500/30 dark:bg-indigo-500/10">
           <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-500" />
           <span className="shrink-0 text-sm font-medium">
