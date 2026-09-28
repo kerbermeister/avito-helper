@@ -62,6 +62,7 @@ export interface StructuredListing {
   title: string
   description: string
   category: string | null
+  price: number | null
 }
 
 /** События прогресса структуризации, которые стримит бэкенд (SSE). */

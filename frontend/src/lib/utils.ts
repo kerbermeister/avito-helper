@@ -108,9 +108,9 @@ const RU_UNITS: Record<string, number> = {
 }
 
 const RU_SCALES: Record<string, number> = {
-  тысяча: 1_000, тысячи: 1_000, тысяч: 1_000,
-  миллион: 1_000_000, миллиона: 1_000_000, миллионов: 1_000_000,
-  миллиард: 1_000_000_000, миллиарда: 1_000_000_000, миллиардов: 1_000_000_000,
+  тысяча: 1_000, тысячи: 1_000, тысяч: 1_000, тыс: 1_000,
+  миллион: 1_000_000, миллиона: 1_000_000, миллионов: 1_000_000, млн: 1_000_000,
+  миллиард: 1_000_000_000, миллиарда: 1_000_000_000, миллиардов: 1_000_000_000, млрд: 1_000_000_000,
 }
 
 /** Парсит число из русских слов-числительных: «две тысячи» → 2000. */
@@ -146,7 +146,73 @@ export function parseRuNumber(text: string): number | null {
   return matched && total > 0 ? Math.round(total) : null
 }
 
-/** Распознаёт цену из надиктованного текста: сначала слова, потом цифры. */
-export function parsePrice(text: string): number | null {
-  return parseRuNumber(text) ?? extractNumber(text)
+const isDigitToken = (token: string): boolean => /^\d+$/.test(token)
+const isWordNumeral = (token: string): boolean => token in RU_UNITS || token in RU_SCALES
+/** Слова, рядом с которыми число считается ценой. */
+const isPriceMarker = (token: string): boolean => /^(руб|₽|тыс|млн|млрд)/.test(token)
+
+/** Значение последовательности токенов, склеивая разряды: «12 500» → 12500. */
+function parseNumeralRun(run: string[]): number | null {
+  const merged: string[] = []
+  let digits = ''
+  for (const token of run) {
+    if (isDigitToken(token)) {
+      digits += token
+    } else {
+      if (digits) {
+        merged.push(digits)
+        digits = ''
+      }
+      merged.push(token)
+    }
+  }
+  if (digits) merged.push(digits)
+  return parseRuNumber(merged.join(' '))
+}
+
+/**
+ * Распознаёт цену из надиктованного текста.
+ *
+ * Ищем число рядом с ценовым маркером («70 000 рублей», «семьдесят тысяч»),
+ * чтобы модель, объём памяти или год не были приняты за цену. Если маркера нет,
+ * при `requireMarker = false` берём единственное число в тексте; иначе не угадываем.
+ */
+export function parsePrice(text: string, requireMarker = false): number | null {
+  const tokens = text
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/₽/g, ' руб ')
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean)
+
+  // Максимальные последовательности «ценоподобных» токенов
+  const runs: string[][] = []
+  let current: string[] = []
+  for (const token of tokens) {
+    if (isDigitToken(token) || isWordNumeral(token) || isPriceMarker(token)) {
+      current.push(token)
+    } else if (current.length > 0) {
+      runs.push(current)
+      current = []
+    }
+  }
+  if (current.length > 0) runs.push(current)
+
+  // 1) последовательность с ценовым маркером — это почти всегда цена
+  for (const run of runs) {
+    if (run.some(isPriceMarker)) {
+      const value = parseNumeralRun(run)
+      if (value !== null) return value
+    }
+  }
+
+  // при строгом режиме без ценового маркера не угадываем (чтобы не взять 8/256 или год)
+  if (requireMarker) return null
+
+  // 2) если в тексте ровно одно число — считаем его ценой
+  const numericRuns = runs.filter((run) => run.some((t) => isDigitToken(t) || isWordNumeral(t)))
+  if (numericRuns.length === 1) return parseNumeralRun(numericRuns[0])
+
+  // 3) иначе не угадываем
+  return null
 }

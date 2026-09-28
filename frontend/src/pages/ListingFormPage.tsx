@@ -168,8 +168,12 @@ export function ListingFormPage() {
         if (structured.title) setTitle(structured.title)
         if (structured.description) setDescription(structured.description)
         if (structured.category) setCategory(structured.category)
-        const n = parsePrice(res.text)
-        if (n !== null) setPriceInput(String(n))
+        if (typeof structured.price === 'number' && structured.price > 0) {
+          setPriceInput(String(structured.price))
+        } else {
+          const n = parsePrice(res.text, true)
+          if (n !== null) setPriceInput(String(n))
+        }
       } catch (e) {
         setFormError(e instanceof Error ? e.message : 'Ошибка структуризации')
       } finally {
