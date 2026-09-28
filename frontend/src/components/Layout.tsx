@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { LayoutList, Plus, User, Moon, Sun, LogOut } from 'lucide-react'
 import { useAuth } from '../auth'
 import { useTheme } from '../theme'
@@ -14,6 +15,30 @@ export function Layout() {
   const { email, logout } = useAuth()
   const { theme, toggle } = useTheme()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // На странице создания/редактирования объявления нижняя панель не должна мешать —
+  // показываем её только когда докрутили форму до самого низа.
+  const isFormPage =
+    location.pathname === '/new' || /^\/listings\/\d+\/edit$/.test(location.pathname)
+  const [atBottom, setAtBottom] = useState(false)
+
+  useEffect(() => {
+    if (!isFormPage) return
+    const onScroll = () => {
+      const el = document.documentElement
+      setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 24)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [isFormPage])
+
+  const showMobileNav = !isFormPage || atBottom
 
   const handleLogout = () => {
     logout()
@@ -68,7 +93,12 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 flex border-t border-slate-200 bg-white/90 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/90 md:hidden">
+      <nav
+        className={cn(
+          'fixed inset-x-0 bottom-0 z-20 flex border-t border-slate-200 bg-white/90 backdrop-blur transition-transform duration-300 dark:border-zinc-800 dark:bg-zinc-900/90 md:hidden',
+          !showMobileNav && 'translate-y-full',
+        )}
+      >
         {navItems.map((item) => (
           <NavLink
             key={item.to}
