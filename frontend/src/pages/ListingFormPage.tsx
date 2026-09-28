@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Mic, Square } from 'lucide-react'
 import { api } from '../lib/api'
 import { kopecksToRublesInput, parsePrice, rublesInputToKopecks } from '../lib/utils'
+import { compressImage } from '../lib/image'
 import { useVoice } from '../hooks/useVoice'
 import { useMicrophones } from '../hooks/useMicrophones'
 import { AutoGrowTextarea, Button, Card, Input, Label, Spinner } from '../components/ui'
@@ -220,11 +221,18 @@ export function ListingFormPage() {
     }
   }
 
-  const addFiles = (newFiles: File[]) => {
+  const addFiles = async (newFiles: File[]) => {
     const maxNew = 12 - (listing?.photos.length ?? 0) - files.length
     const accepted = newFiles.slice(0, Math.max(0, maxNew))
     if (accepted.length === 0) return
-    const next = [...files, ...accepted]
+    // Сжимаем на клиенте (теми же параметрами, что и бэкенд) — грузим уже лёгкие файлы
+    const maxDimension = appConfig?.imageMaxDimension ?? 1600
+    const quality = appConfig?.imageQuality ?? 0.85
+    const compressed: File[] = []
+    for (const file of accepted) {
+      compressed.push(await compressImage(file, maxDimension, quality))
+    }
+    const next = [...files, ...compressed]
     setFiles(next)
     setPreviews(next.map((f) => URL.createObjectURL(f)))
   }

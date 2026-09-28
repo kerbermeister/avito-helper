@@ -114,14 +114,14 @@ public class ListingService {
         String filename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "photo";
 
         byte[] original = file.getBytes();
-        byte[] compressed = imageService.compress(original);
-        byte[] thumb = imageService.thumbnail(original);
+        byte[] prepared = imageService.prepare(original);
+        byte[] thumb = imageService.thumbnail(prepared);
 
         String base = "listings/" + listingId + "/" + UUID.randomUUID();
         String key = base + ".jpg";
         String thumbKey = base + "_thumb.jpg";
 
-        storageService.put(key, new ByteArrayInputStream(compressed), compressed.length, "image/jpeg");
+        storageService.put(key, new ByteArrayInputStream(prepared), prepared.length, "image/jpeg");
         storageService.put(thumbKey, new ByteArrayInputStream(thumb), thumb.length, "image/jpeg");
 
         Photo photo = new Photo();
@@ -130,7 +130,7 @@ public class ListingService {
         photo.setThumbKey(thumbKey);
         photo.setFileName(filename);
         photo.setMimeType("image/jpeg");
-        photo.setSizeBytes((long) compressed.length);
+        photo.setSizeBytes((long) prepared.length);
         photo.setSortOrder(currentCount + 1);
 
         return toPhotoResponse(listingId, photoRepository.save(photo));

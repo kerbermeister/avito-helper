@@ -1,9 +1,11 @@
 package com.avitohelper.service;
 
 import com.avitohelper.config.AppProperties;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import javax.imageio.ImageIO;
 import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +25,14 @@ public class ImageService {
         this.maxDimension = props.image().maxDimension();
         this.quality = props.image().quality();
         this.thumbDimension = props.image().thumbDimension();
+    }
+
+    /**
+     * Готовит оригинал к хранению. Если клиент уже прислал оптимизированный JPEG
+     * в пределах лимита — принимаем как есть (без повторного ре-энкода), иначе сжимаем.
+     */
+    public byte[] prepare(byte[] input) {
+        return isReadyJpeg(input) ? input : compress(input);
     }
 
     public byte[] compress(byte[] input) {
@@ -45,6 +55,7 @@ public class ImageService {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             Thumbnails.of(new ByteArrayInputStream(input))
+                    .useExifOrientation(true)
                     .rotate(90)
                     .outputFormat("jpg")
                     .outputQuality(quality)
@@ -55,9 +66,29 @@ public class ImageService {
         }
     }
 
+    /** Уже JPEG и не превышает лимит по большей стороне. */
+    private boolean isReadyJpeg(byte[] input) {
+        if (input == null || input.length < 3) {
+            return false;
+        }
+        if ((input[0] & 0xFF) != 0xFF || (input[1] & 0xFF) != 0xD8 || (input[2] & 0xFF) != 0xFF) {
+            return false;
+        }
+        try {
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(input));
+            if (image == null) {
+                return false;
+            }
+            return Math.max(image.getWidth(), image.getHeight()) <= maxDimension;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     private byte[] resize(byte[] input, int maxDim, float q) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Thumbnails.of(new ByteArrayInputStream(input))
+                .useExifOrientation(true)
                 .size(maxDim, maxDim)
                 .outputFormat("jpg")
                 .outputQuality(q)

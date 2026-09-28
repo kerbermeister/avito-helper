@@ -24,6 +24,8 @@ public class ConfigController {
         return new AppConfigResponse(
                 props.voice().maxRecordingSeconds(),
                 props.voice().minSpeechLevel(),
-                props.voice().fieldDictationEnabled());
+                props.voice().fieldDictationEnabled(),
+                props.image().maxDimension(),
+                props.image().quality());
     }
 }

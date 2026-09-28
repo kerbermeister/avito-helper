@@ -56,6 +56,8 @@ export interface AppConfig {
   maxRecordingSeconds: number
   minSpeechLevel: number
   fieldDictationEnabled: boolean
+  imageMaxDimension: number
+  imageQuality: number
 }
 
 export interface ListingPayload {
