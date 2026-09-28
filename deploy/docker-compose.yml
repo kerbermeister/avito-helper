@@ -43,7 +43,13 @@ services:
   backend:
     image: ${IMAGE_PREFIX}/backend:latest
     restart: unless-stopped
+    # Ограничение памяти для Java-приложения: 512 МиБ на контейнер.
+    # JVM (Java 25) видит cgroup-лимит и считает heap от него, поэтому
+    # MaxRAMPercentage=50 даёт heap ~256 МиБ, остальное — на Metaspace/стеки/буферы.
+    mem_limit: 512m
+    memswap_limit: 512m
     environment:
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=50 -XX:InitialRAMPercentage=20 -XX:MaxMetaspaceSize=128m"
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-avito_helper}
       DB_USERNAME: ${POSTGRES_USER:-avito}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-avito}
