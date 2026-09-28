@@ -16,12 +16,14 @@ import tools.jackson.databind.ObjectMapper;
 public class GeminiStructuringProvider implements StructuringProvider {
 
     private final RestClient restClient;
+    private final boolean enabled;
     private final String apiKey;
     private final String model;
     private final ObjectMapper objectMapper;
 
     public GeminiStructuringProvider(RestClient.Builder builder, AppProperties props, ObjectMapper objectMapper) {
         this.restClient = builder.build();
+        this.enabled = props.gemini().enabled();
         this.apiKey = props.gemini().apiKey();
         this.model = props.gemini().model();
         this.objectMapper = objectMapper;
@@ -30,6 +32,11 @@ public class GeminiStructuringProvider implements StructuringProvider {
     @Override
     public String name() {
         return "gemini";
+    }
+
+    @Override
+    public boolean enabled() {
+        return enabled;
     }
 
     @Override

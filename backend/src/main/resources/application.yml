@@ -53,10 +53,14 @@ app:
     # Сторона миниатюры (px)
     thumb-dimension: ${IMAGE_THUMB_DIMENSION:400}
   gemini:
+    # Включает/выключает провайдера структуризации (GEMINI_ENABLED=false — отключить)
+    enabled: ${GEMINI_ENABLED:true}
     # Ключ Google AI Studio: https://aistudio.google.com/apikey
     api-key: ${GEMINI_API_KEY:}
     model: ${GEMINI_MODEL:gemini-3.8-flash}
   openai:
+    # Включает/выключает провайдера структуризации (OPENAI_ENABLED=false — отключить)
+    enabled: ${OPENAI_ENABLED:true}
     # Ключ OpenAI: https://platform.openai.com/api-keys
     api-key: ${OPENAI_API_KEY:}
     model: ${OPENAI_MODEL:gpt-4o-mini}

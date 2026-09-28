@@ -38,9 +38,9 @@ public record AppProperties(
     public record Image(int maxDimension, float quality, int thumbDimension) {
     }
 
-    public record Gemini(String apiKey, String model) {
+    public record Gemini(boolean enabled, String apiKey, String model) {
     }
 
-    public record OpenAi(String apiKey, String model) {
+    public record OpenAi(boolean enabled, String apiKey, String model) {
     }
 }

@@ -11,4 +11,13 @@ public interface StructuringProvider {
     StructuredListing structure(String text);
 
     String name();
+
+    /**
+     * Включён ли провайдер. Управляется настройками
+     * {@code app.gemini.enabled} / {@code app.openai.enabled}.
+     * Отключённые провайдеры стратегия просто пропускает.
+     */
+    default boolean enabled() {
+        return true;
+    }
 }

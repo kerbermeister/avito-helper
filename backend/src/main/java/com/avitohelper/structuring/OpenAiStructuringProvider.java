@@ -18,12 +18,14 @@ public class OpenAiStructuringProvider implements StructuringProvider {
     private static final String URL = "https://api.openai.com/v1/chat/completions";
 
     private final RestClient restClient;
+    private final boolean enabled;
     private final String apiKey;
     private final String model;
     private final ObjectMapper objectMapper;
 
     public OpenAiStructuringProvider(RestClient.Builder builder, AppProperties props, ObjectMapper objectMapper) {
         this.restClient = builder.build();
+        this.enabled = props.openAi().enabled();
         this.apiKey = props.openAi().apiKey();
         this.model = props.openAi().model();
         this.objectMapper = objectMapper;
@@ -32,6 +34,11 @@ public class OpenAiStructuringProvider implements StructuringProvider {
     @Override
     public String name() {
         return "openai";
+    }
+
+    @Override
+    public boolean enabled() {
+        return enabled;
     }
 
     @Override

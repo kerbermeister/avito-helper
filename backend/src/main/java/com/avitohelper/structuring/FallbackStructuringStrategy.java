@@ -28,6 +28,10 @@ public class FallbackStructuringStrategy implements StructuringStrategy {
     public StructuredListing structure(String text, StructuringProgressListener listener) {
         RuntimeException lastError = null;
         for (StructuringProvider provider : providers) {
+            if (!provider.enabled()) {
+                log.info("Провайдер «{}» отключён — пропускаю", provider.name());
+                continue;
+            }
             listener.onAttempt(provider.name());
             try {
                 StructuredListing result = provider.structure(text);
@@ -43,6 +47,6 @@ public class FallbackStructuringStrategy implements StructuringStrategy {
         if (lastError != null) {
             throw lastError;
         }
-        throw new IllegalStateException("Нет доступных провайдеров структуризации");
+        throw new IllegalStateException("Нет включённых провайдеров структуризации");
     }
 }
