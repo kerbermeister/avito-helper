@@ -13,6 +13,7 @@ public record AppProperties(
         S3 s3,
         Stt stt,
         Image image,
+        Voice voice,
         Gemini gemini,
         OpenAi openAi
 ) {
@@ -42,6 +43,9 @@ public record AppProperties(
     }
 
     public record Image(int maxDimension, float quality, int thumbDimension) {
+    }
+
+    public record Voice(int maxRecordingSeconds) {
     }
 
     public record Gemini(boolean enabled, String apiKey, String model) {

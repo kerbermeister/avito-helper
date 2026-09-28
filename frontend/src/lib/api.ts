@@ -1,4 +1,5 @@
 import type {
+  AppConfig,
   AuthResponse,
   Listing,
   ListingPayload,
@@ -128,6 +129,10 @@ export const api = {
 
   getListing(id: number) {
     return request<Listing>(`/listings/${id}`)
+  },
+
+  getConfig() {
+    return request<AppConfig>('/config')
   },
 
   createListing(payload: ListingPayload) {

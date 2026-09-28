@@ -2,26 +2,38 @@ import { useRef, useState } from 'react'
 
 /**
  * Хук записи с микрофона. `process` — функция, которая получает blob аудио и
- * возвращает результат (например, api.transcribe или api.parseListing).
+ * возвращает результат (например, api.transcribeStream).
+ *
+ * `maxDurationSeconds` — ограничение длительности записи: по достижении запись
+ * останавливается автоматически, а `remaining` показывает сколько секунд осталось.
  */
 export function useVoice<T>(
   onResult: (result: T) => void | Promise<void>,
   process: (blob: Blob, filename: string) => Promise<T>,
+  maxDurationSeconds?: number,
 ) {
   const [recording, setRecording] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [level, setLevel] = useState(0)
+  const [remaining, setRemaining] = useState<number | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const audioContextRef = useRef<AudioContext | null>(null)
   const rafRef = useRef<number | null>(null)
+  const timerRef = useRef<number | null>(null)
+  const stopRef = useRef<() => void>(() => {})
 
   const cleanup = () => {
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current)
       rafRef.current = null
     }
+    if (timerRef.current !== null) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+    setRemaining(null)
     setLevel(0)
     if (audioContextRef.current) {
       void audioContextRef.current.close()
@@ -33,6 +45,18 @@ export function useVoice<T>(
     }
     recorderRef.current = null
   }
+
+  const stop = () => {
+    const rec = recorderRef.current
+    if (rec && rec.state !== 'inactive') {
+      rec.stop()
+    } else {
+      // слишком быстрое нажатие — рекордер ещё не стартовал, просто освобождаем ресурсы
+      cleanup()
+      setRecording(false)
+    }
+  }
+  stopRef.current = stop
 
   const start = async (deviceId?: string) => {
     setError(null)
@@ -95,6 +119,23 @@ export function useVoice<T>(
       }
       recorder.start()
       setRecording(true)
+
+      // Авто-стоп по достижении лимита длительности
+      if (maxDurationSeconds && maxDurationSeconds > 0) {
+        const deadline = Date.now() + maxDurationSeconds * 1000
+        setRemaining(maxDurationSeconds)
+        timerRef.current = window.setInterval(() => {
+          const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
+          setRemaining(left)
+          if (left <= 0) {
+            if (timerRef.current !== null) {
+              clearInterval(timerRef.current)
+              timerRef.current = null
+            }
+            stopRef.current()
+          }
+        }, 250)
+      }
     } catch {
       cleanup()
       setError('Нет доступа к микрофону')
@@ -102,16 +143,5 @@ export function useVoice<T>(
     }
   }
 
-  const stop = () => {
-    const rec = recorderRef.current
-    if (rec && rec.state !== 'inactive') {
-      rec.stop()
-    } else {
-      // слишком быстрое нажатие — рекордер ещё не стартовал, просто освобождаем ресурсы
-      cleanup()
-      setRecording(false)
-    }
-  }
-
-  return { recording, error, level, start, stop }
+  return { recording, error, level, remaining, start, stop }
 }

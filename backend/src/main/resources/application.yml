@@ -60,6 +60,9 @@ app:
     quality: ${IMAGE_QUALITY:0.85}
     # Сторона миниатюры (px)
     thumb-dimension: ${IMAGE_THUMB_DIMENSION:400}
+  voice:
+    # Максимальная длительность надиктовки (сек) — по достижении запись останавливается
+    max-recording-seconds: ${VOICE_MAX_RECORDING_SECONDS:45}
   gemini:
     # Включает/выключает провайдера структуризации (GEMINI_ENABLED=false — отключить)
     enabled: ${GEMINI_ENABLED:true}

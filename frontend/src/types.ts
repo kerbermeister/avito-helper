@@ -51,6 +51,11 @@ export interface AuthResponse {
   email: string
 }
 
+/** Публичные настройки приложения с бэкенда. */
+export interface AppConfig {
+  maxRecordingSeconds: number
+}
+
 export interface ListingPayload {
   title: string
   description: string

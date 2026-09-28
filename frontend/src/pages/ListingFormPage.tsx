@@ -114,6 +114,14 @@ export function ListingFormPage() {
     enabled: editing && !!listingId,
   })
 
+  // Лимит длительности надиктовки приходит с бэкенда (app.voice.max-recording-seconds)
+  const { data: appConfig } = useQuery({
+    queryKey: ['config'],
+    queryFn: () => api.getConfig(),
+    staleTime: Infinity,
+  })
+  const maxRecordingSeconds = appConfig?.maxRecordingSeconds
+
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priceInput, setPriceInput] = useState('')
@@ -169,6 +177,7 @@ export function ListingFormPage() {
       setRecordingField(null)
     },
     processAudio,
+    maxRecordingSeconds,
   )
 
   const toggleVoice = (field: VoiceField) => {
@@ -206,6 +215,7 @@ export function ListingFormPage() {
       }
     },
     processAudio,
+    maxRecordingSeconds,
   )
 
   const toggleWholeVoice = () => {
@@ -360,6 +370,11 @@ export function ListingFormPage() {
           <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-500" />
           <span className="shrink-0 text-sm font-medium">Слушаю… расскажите о товаре</span>
           <VoiceMeter level={wholeVoice.level} />
+          {wholeVoice.remaining != null && (
+            <span className="shrink-0 text-sm font-medium tabular-nums text-slate-500 dark:text-zinc-400">
+              {wholeVoice.remaining} с
+            </span>
+          )}
         </div>
       )}
 
@@ -430,6 +445,11 @@ export function ListingFormPage() {
             Запись: {FIELD_LABELS[recordingField]}
           </span>
           <VoiceMeter level={voice.level} />
+          {voice.remaining != null && (
+            <span className="shrink-0 text-sm font-medium tabular-nums text-slate-500 dark:text-zinc-400">
+              {voice.remaining} с
+            </span>
+          )}
         </div>
       )}
 
