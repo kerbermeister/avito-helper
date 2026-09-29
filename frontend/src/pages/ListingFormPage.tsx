@@ -10,7 +10,6 @@ import { useMicrophones } from '../hooks/useMicrophones'
 import { AutoGrowTextarea, Button, Card, Input, Label, Spinner } from '../components/ui'
 import { VoiceWave } from '../components/VoiceWave'
 import { PhotoPicker } from '../components/PhotoPicker'
-import { invalidateImageCache } from '../components/AuthImage'
 import type { StructuringProgress, TranscriptionProgress } from '../types'
 
 type VoiceField = 'title' | 'description' | 'price' | 'category'
@@ -120,6 +119,7 @@ export function ListingFormPage() {
   const [structuringLog, setStructuringLog] = useState<string[]>([])
   const [recognizing, setRecognizing] = useState(false)
   const [transcribeLog, setTranscribeLog] = useState<string[]>([])
+  const [photoRevision, setPhotoRevision] = useState(0)
   const voiceTargetRef = useRef<VoiceField | null>(null)
 
   // useMicrophones: безопасно даже если navigator.mediaDevices отсутствует
@@ -250,9 +250,9 @@ export function ListingFormPage() {
 
   const rotateMutation = useMutation({
     mutationFn: (photoId: number) => api.rotatePhoto(listingId!, photoId),
-    onSuccess: (_data, photoId) => {
-      invalidateImageCache(`/api/listings/${listingId}/photos/${photoId}`)
-      invalidateImageCache(`/api/listings/${listingId}/photos/${photoId}/thumb`)
+    onSuccess: () => {
+      // Меняем ревизию, чтобы AuthImage перезагрузил превью (URL-то не меняется)
+      setPhotoRevision((v) => v + 1)
       queryClient.invalidateQueries({ queryKey: ['listing', listingId] })
     },
   })
@@ -576,6 +576,7 @@ export function ListingFormPage() {
           onRemoveFile={removeFile}
           onRotateFile={rotateFile}
           max={12}
+          revision={photoRevision}
         />
       </Card>
 

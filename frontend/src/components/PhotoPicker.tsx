@@ -13,6 +13,8 @@ interface PhotoPickerProps {
   onRemoveFile: (index: number) => void
   onRotateFile: (index: number) => void
   max: number
+  /** Меняется при повороте, чтобы обновить превью существующих фото */
+  revision?: number
 }
 
 export function PhotoPicker({
@@ -25,6 +27,7 @@ export function PhotoPicker({
   onRemoveFile,
   onRotateFile,
   max,
+  revision = 0,
 }: PhotoPickerProps) {
   const cameraRef = useRef<HTMLInputElement>(null)
   const galleryRef = useRef<HTMLInputElement>(null)
@@ -44,7 +47,7 @@ export function PhotoPicker({
             key={p.id}
             className="group relative aspect-square overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200 dark:bg-zinc-800 dark:ring-zinc-700"
           >
-            <AuthImage src={p.thumbUrl} className="h-full w-full" />
+            <AuthImage src={p.thumbUrl} className="h-full w-full" revision={revision} />
             <button
               type="button"
               onClick={() => onRemoveExisting(p)}

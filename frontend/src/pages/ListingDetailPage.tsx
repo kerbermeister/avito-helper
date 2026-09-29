@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Download,
   Pencil,
+  RotateCw,
   Trash2,
   X,
 } from 'lucide-react'
@@ -38,6 +39,7 @@ export function ListingDetailPage() {
   const queryClient = useQueryClient()
   const [downloading, setDownloading] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+  const [photoRevision, setPhotoRevision] = useState(0)
   const touchStartX = useRef<number | null>(null)
 
   const { data: listing, isLoading, error } = useQuery({
@@ -55,6 +57,15 @@ export function ListingDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['listings'] })
       navigate('/')
+    },
+  })
+
+  const rotateMutation = useMutation({
+    mutationFn: (photoId: number) => api.rotatePhoto(Number(id), photoId),
+    onSuccess: () => {
+      // Меняем ревизию, чтобы AuthImage перезагрузил фото (URL не меняется)
+      setPhotoRevision((v) => v + 1)
+      queryClient.invalidateQueries({ queryKey: ['listing', id] })
     },
   })
 
@@ -124,7 +135,7 @@ export function ListingDetailPage() {
               onClick={() => setLightboxIndex(i)}
               className="aspect-square overflow-hidden rounded-xl ring-1 ring-slate-200 transition hover:opacity-90 dark:ring-zinc-800"
             >
-              <AuthImage src={p.thumbUrl} className="h-full w-full" />
+              <AuthImage src={p.thumbUrl} className="h-full w-full" revision={photoRevision} />
             </button>
           ))}
         </div>
@@ -198,13 +209,26 @@ export function ListingDetailPage() {
             <span className="text-sm">
               {lightboxIndex + 1} / {totalPhotos}
             </span>
-            <button
-              onClick={closeLightbox}
-              className="rounded-full p-2 hover:bg-white/10"
-              aria-label="Закрыть"
-            >
-              <X size={24} />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  rotateMutation.mutate(listing.photos[lightboxIndex].id)
+                }}
+                disabled={rotateMutation.isPending}
+                className="rounded-full p-2 hover:bg-white/10 disabled:opacity-50"
+                aria-label="Повернуть"
+              >
+                <RotateCw size={22} />
+              </button>
+              <button
+                onClick={closeLightbox}
+                className="rounded-full p-2 hover:bg-white/10"
+                aria-label="Закрыть"
+              >
+                <X size={24} />
+              </button>
+            </div>
           </div>
           <div
             className="relative min-h-0 flex-1"
@@ -223,6 +247,7 @@ export function ListingDetailPage() {
             <AuthImage
               src={listing.photos[lightboxIndex].url}
               className="h-full w-full object-contain"
+              revision={photoRevision}
             />
             {totalPhotos > 1 && (
               <>

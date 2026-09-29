@@ -2,16 +2,21 @@ import { useEffect, useState } from 'react'
 import { api } from '../lib/api'
 import { cn } from '../lib/utils'
 
-const cache = new Map<string, string>()
+interface CacheEntry {
+  revision: number
+  url: string
+}
+
+const cache = new Map<string, CacheEntry>()
 
 /** Сброс кэша одного изображения (или всего, если src не передан). */
 export function invalidateImageCache(src?: string) {
   if (src) {
-    const url = cache.get(src)
-    if (url) URL.revokeObjectURL(url)
+    const entry = cache.get(src)
+    if (entry) URL.revokeObjectURL(entry.url)
     cache.delete(src)
   } else {
-    for (const url of cache.values()) URL.revokeObjectURL(url)
+    for (const entry of cache.values()) URL.revokeObjectURL(entry.url)
     cache.clear()
   }
 }
@@ -20,18 +25,24 @@ export function AuthImage({
   src,
   alt,
   className,
+  revision = 0,
 }: {
   src: string
   alt?: string
   className?: string
+  /** Меняйте при изменении картинки на сервере (например, после поворота), чтобы перезагрузить её. */
+  revision?: number
 }) {
-  const [url, setUrl] = useState<string | null>(() => cache.get(src) ?? null)
+  const [url, setUrl] = useState<string | null>(() => {
+    const entry = cache.get(src)
+    return entry && entry.revision === revision ? entry.url : null
+  })
 
   useEffect(() => {
     let cancelled = false
     const cached = cache.get(src)
-    if (cached) {
-      setUrl(cached)
+    if (cached && cached.revision === revision) {
+      setUrl(cached.url)
       return
     }
     setUrl(null)
@@ -40,7 +51,11 @@ export function AuthImage({
       .then((blob) => {
         if (cancelled) return
         const objectUrl = URL.createObjectURL(blob)
-        cache.set(src, objectUrl)
+        const previous = cache.get(src)
+        if (previous && previous.revision !== revision) {
+          URL.revokeObjectURL(previous.url)
+        }
+        cache.set(src, { revision, url: objectUrl })
         setUrl(objectUrl)
       })
       .catch(() => {
@@ -49,7 +64,7 @@ export function AuthImage({
     return () => {
       cancelled = true
     }
-  }, [src])
+  }, [src, revision])
 
   if (!url) {
     return (
