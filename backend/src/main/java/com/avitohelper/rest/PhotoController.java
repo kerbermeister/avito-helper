@@ -50,6 +50,8 @@ public class PhotoController {
                 currentUserService.idOf(principal.getUsername()), listingId, photoId);
         response.setContentType(stream.contentType());
         response.setHeader("Content-Disposition", "inline");
+        // Фото может меняться (поворот) под тем же URL — кэшировать надолго нельзя
+        response.setHeader("Cache-Control", "private, no-store");
         try (InputStream in = stream.inputStream()) {
             in.transferTo(response.getOutputStream());
         }
@@ -72,7 +74,8 @@ public class PhotoController {
                 currentUserService.idOf(principal.getUsername()), listingId, photoId);
         response.setContentType(stream.contentType());
         response.setHeader("Content-Disposition", "inline");
-        response.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        // Фото может меняться (поворот) под тем же URL — кэшировать надолго нельзя
+        response.setHeader("Cache-Control", "private, no-store");
         try (InputStream in = stream.inputStream()) {
             in.transferTo(response.getOutputStream());
         }

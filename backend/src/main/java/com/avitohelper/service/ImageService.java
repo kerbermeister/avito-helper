@@ -7,6 +7,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 import net.coobird.thumbnailator.Thumbnails;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,6 +18,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class ImageService {
+
+    private static final Logger log = LoggerFactory.getLogger(ImageService.class);
 
     private final int maxDimension;
     private final float quality;
@@ -39,6 +43,7 @@ public class ImageService {
         try {
             return resize(input, maxDimension, quality);
         } catch (Exception e) {
+            log.warn("Не удалось сжать изображение: {}", e.getMessage());
             return input;
         }
     }
@@ -47,6 +52,7 @@ public class ImageService {
         try {
             return resize(input, thumbDimension, quality);
         } catch (Exception e) {
+            log.warn("Не удалось создать миниатюру: {}", e.getMessage());
             return input;
         }
     }
@@ -56,12 +62,14 @@ public class ImageService {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             Thumbnails.of(new ByteArrayInputStream(input))
                     .useExifOrientation(true)
+                    .scale(1.0)
                     .rotate(90)
                     .outputFormat("jpg")
                     .outputQuality(quality)
                     .toOutputStream(out);
             return out.toByteArray();
         } catch (Exception e) {
+            log.warn("Не удалось повернуть изображение: {}", e.getMessage());
             return input;
         }
     }
