@@ -46,9 +46,9 @@ export function AuthImage({
       return
     }
     setUrl(null)
-    // После поворота URL тот же, а браузер мог закэшировать его «намертво» —
-    // поэтому запрашиваем с версионным параметром, чтобы обойти кэш.
-    const fetchUrl = revision > 0 ? `${src}${src.includes('?') ? '&' : '?'}v=${revision}` : src
+    // Всегда запрашиваем с версионным параметром: URL фото не меняется при повороте,
+    // а браузер мог закэшировать его «намертво» — так обходим и старый кэш, и новый.
+    const fetchUrl = `${src}${src.includes('?') ? '&' : '?'}v=${revision}`
     api
       .getPhotoBlob(fetchUrl)
       .then((blob) => {
