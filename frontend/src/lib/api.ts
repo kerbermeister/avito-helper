@@ -51,13 +51,6 @@ export function isTokenExpired(token?: string | null): boolean {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  // Проактивная проверка: если токен протух, не делаем запрос, а сразу очищаем и редиректим
-  if (isTokenExpired()) {
-    clearToken()
-    window.dispatchEvent(new Event('avito:unauthorized'))
-    throw new Error('Сессия истекла. Войдите снова.')
-  }
-
   const token = getToken()
   const headers: Record<string, string> = {
     ...((options.headers as Record<string, string> | undefined) ?? {}),
@@ -233,11 +226,6 @@ export const api = {
     text: string,
     onProgress: (event: StructuringProgress) => void,
   ): Promise<StructuredListing> {
-    if (isTokenExpired()) {
-      clearToken()
-      window.dispatchEvent(new Event('avito:unauthorized'))
-      throw new Error('Сессия истекла')
-    }
     const token = getToken()
     const res = await fetch('/api/listings/structure/stream', {
       method: 'POST',
@@ -292,11 +280,6 @@ export const api = {
     filename: string,
     onProgress: (event: TranscriptionProgress) => void,
   ): Promise<string> {
-    if (isTokenExpired()) {
-      clearToken()
-      window.dispatchEvent(new Event('avito:unauthorized'))
-      throw new Error('Сессия истекла')
-    }
     const token = getToken()
     const fd = new FormData()
     fd.append('file', blob, filename)
@@ -340,11 +323,6 @@ export const api = {
   },
 
   async downloadArchive(listingId: number): Promise<void> {
-    if (isTokenExpired()) {
-      clearToken()
-      window.dispatchEvent(new Event('avito:unauthorized'))
-      throw new Error('Сессия истекла')
-    }
     const token = getToken()
     const res = await fetch(`/api/listings/${listingId}/photos/archive`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -367,11 +345,6 @@ export const api = {
   },
 
   async downloadDraftsArchive(): Promise<void> {
-    if (isTokenExpired()) {
-      clearToken()
-      window.dispatchEvent(new Event('avito:unauthorized'))
-      throw new Error('Сессия истекла')
-    }
     const token = getToken()
     const res = await fetch('/api/listings/drafts/archive', {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -394,11 +367,6 @@ export const api = {
   },
 
   async getPhotoBlob(url: string): Promise<Blob> {
-    if (isTokenExpired()) {
-      clearToken()
-      window.dispatchEvent(new Event('avito:unauthorized'))
-      throw new Error('Сессия истекла')
-    }
     const token = getToken()
     const res = await fetch(url, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
