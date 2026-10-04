@@ -23,22 +23,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     safeGetItem('avito_email'),
   )
 
-  // Проактивная проверка: если токен протух сразу при загрузке или изменении
+  // Проактивная проверка при монтировании: если токен уже протух, очищаем
   useEffect(() => {
-    if (token && isTokenExpired()) {
+    const currentToken = getToken()
+    if (currentToken && isTokenExpired(currentToken)) {
       clearToken()
       safeRemoveItem('avito_email')
       setToken(null)
       setEmail(null)
-      window.location.href = '/login'
     }
-  }, [token])
+  }, [])
 
   useEffect(() => {
     const onUnauthorized = () => {
       setToken(null)
       setEmail(null)
-      window.location.href = '/login'
     }
     window.addEventListener('avito:unauthorized', onUnauthorized)
     return () => window.removeEventListener('avito:unauthorized', onUnauthorized)

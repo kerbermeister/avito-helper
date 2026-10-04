@@ -31,17 +31,22 @@ export function clearToken(): void {
  * Проверяет, не истёк ли JWT-токен, декодируя payload без проверки подписи.
  * Возвращает true, если токен отсутствует, не является JWT или exp < now.
  */
-export function isTokenExpired(): boolean {
-  const token = getToken()
-  if (!token) return true
+export function isTokenExpired(token?: string | null): boolean {
+  const t = token ?? getToken()
+  if (!t) return true
   try {
-    const parts = token.split('.')
+    const parts = t.split('.')
     if (parts.length !== 3) return true
-    const payload = JSON.parse(atob(parts[1]))
+    // JWT использует base64url, а не стандартный base64 — конвертируем
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
+    const payload = JSON.parse(atob(padded))
     if (typeof payload.exp !== 'number') return false
-    return payload.exp * 1000 < Date.now()
+    // Небольшой запас (10 сек) на случай рассинхронизации часов
+    return payload.exp * 1000 < Date.now() - 10_000
   } catch {
-    return true
+    // Если не можем декодировать — не блокируем запрос, сервер сам скажет 401
+    return false
   }
 }
 
