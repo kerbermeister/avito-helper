@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Search } from 'lucide-react'
+import { Download, Plus, Search } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
 import { cn, STATUS_ORDER, STATUS_META } from '../lib/utils'
@@ -17,6 +17,7 @@ export function ListingsPage() {
   })
   const [filter, setFilter] = useState<Filter>('ALL')
   const [search, setSearch] = useState('')
+  const [downloadingDrafts, setDownloadingDrafts] = useState(false)
 
   const filtered = useMemo(() => {
     if (!data) return []
@@ -28,18 +29,48 @@ export function ListingsPage() {
     })
   }, [data, filter, search])
 
+  const hasDrafts = useMemo(() => {
+    if (!data) return false
+    return data.some((l) => l.status === 'DRAFT')
+  }, [data])
+
+  const handleDownloadDrafts = async () => {
+    if (!hasDrafts) return
+    setDownloadingDrafts(true)
+    try {
+      await api.downloadDraftsArchive()
+    } catch (e) {
+      console.error('Failed to download drafts archive:', e)
+      alert('Не удалось скачать архив черновиков')
+    } finally {
+      setDownloadingDrafts(false)
+    }
+  }
+
   const filters: Filter[] = ['ALL', ...STATUS_ORDER]
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Мои объявления</h1>
-        <Link
-          to="/new"
-          className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-500 md:hidden"
-        >
-          <Plus size={18} /> Новое
-        </Link>
+        <div className="flex items-center gap-2">
+          {hasDrafts && (
+            <button
+              onClick={handleDownloadDrafts}
+              disabled={downloadingDrafts}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 hover:bg-slate-50 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+            >
+              <Download size={18} />
+              {downloadingDrafts ? 'Скачивание...' : 'Скачать черновики'}
+            </button>
+          )}
+          <Link
+            to="/new"
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-500 md:hidden"
+          >
+            <Plus size={18} /> Новое
+          </Link>
+        </div>
       </div>
 
       <div className="relative">

@@ -7,7 +7,9 @@ import com.avitohelper.dto.StatusUpdateRequest;
 import com.avitohelper.dto.UpdateListingRequest;
 import com.avitohelper.service.CurrentUserService;
 import com.avitohelper.service.ListingService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import java.io.IOException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -38,6 +40,16 @@ public class ListingController {
     @GetMapping
     public List<ListingSummaryResponse> list(@AuthenticationPrincipal UserDetails principal) {
         return listingService.list(currentUserService.idOf(principal.getUsername()));
+    }
+
+    @GetMapping("/drafts/archive")
+    public void downloadDraftsArchive(@AuthenticationPrincipal UserDetails principal,
+                                      HttpServletResponse response) throws IOException {
+        response.setContentType("application/zip");
+        response.setHeader("Content-Disposition", "attachment; filename=\"drafts.zip\"");
+        listingService.writeDraftsArchive(
+                currentUserService.idOf(principal.getUsername()), 
+                response.getOutputStream());
     }
 
     @GetMapping("/{id}")

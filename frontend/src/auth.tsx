@@ -5,8 +5,8 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { api, clearToken, getToken, saveToken } from './lib/api'
-import { safeGetItem, safeSetItem, safeRemoveItem } from './lib/storage'
+import { api, clearToken, getToken, isTokenExpired, saveToken } from './lib/api'
+import { safeGetItem, safeRemoveItem, safeSetItem } from './lib/storage'
 
 interface AuthContextValue {
   token: string | null
@@ -23,10 +23,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     safeGetItem('avito_email'),
   )
 
+  // Проактивная проверка: если токен протух сразу при загрузке или изменении
+  useEffect(() => {
+    if (token && isTokenExpired()) {
+      clearToken()
+      safeRemoveItem('avito_email')
+      setToken(null)
+      setEmail(null)
+      window.location.href = '/login'
+    }
+  }, [token])
+
   useEffect(() => {
     const onUnauthorized = () => {
       setToken(null)
       setEmail(null)
+      window.location.href = '/login'
     }
     window.addEventListener('avito:unauthorized', onUnauthorized)
     return () => window.removeEventListener('avito:unauthorized', onUnauthorized)

@@ -27,7 +27,32 @@ export function clearToken(): void {
   safeRemoveItem(TOKEN_KEY)
 }
 
+/**
+ * Проверяет, не истёк ли JWT-токен, декодируя payload без проверки подписи.
+ * Возвращает true, если токен отсутствует, не является JWT или exp < now.
+ */
+export function isTokenExpired(): boolean {
+  const token = getToken()
+  if (!token) return true
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return true
+    const payload = JSON.parse(atob(parts[1]))
+    if (typeof payload.exp !== 'number') return false
+    return payload.exp * 1000 < Date.now()
+  } catch {
+    return true
+  }
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  // Проактивная проверка: если токен протух, не делаем запрос, а сразу очищаем и редиректим
+  if (isTokenExpired()) {
+    clearToken()
+    window.dispatchEvent(new Event('avito:unauthorized'))
+    throw new Error('Сессия истекла. Войдите снова.')
+  }
+
   const token = getToken()
   const headers: Record<string, string> = {
     ...((options.headers as Record<string, string> | undefined) ?? {}),
@@ -203,6 +228,11 @@ export const api = {
     text: string,
     onProgress: (event: StructuringProgress) => void,
   ): Promise<StructuredListing> {
+    if (isTokenExpired()) {
+      clearToken()
+      window.dispatchEvent(new Event('avito:unauthorized'))
+      throw new Error('Сессия истекла')
+    }
     const token = getToken()
     const res = await fetch('/api/listings/structure/stream', {
       method: 'POST',
@@ -257,6 +287,11 @@ export const api = {
     filename: string,
     onProgress: (event: TranscriptionProgress) => void,
   ): Promise<string> {
+    if (isTokenExpired()) {
+      clearToken()
+      window.dispatchEvent(new Event('avito:unauthorized'))
+      throw new Error('Сессия истекла')
+    }
     const token = getToken()
     const fd = new FormData()
     fd.append('file', blob, filename)
@@ -300,10 +335,20 @@ export const api = {
   },
 
   async downloadArchive(listingId: number): Promise<void> {
+    if (isTokenExpired()) {
+      clearToken()
+      window.dispatchEvent(new Event('avito:unauthorized'))
+      throw new Error('Сессия истекла')
+    }
     const token = getToken()
     const res = await fetch(`/api/listings/${listingId}/photos/archive`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
+    if (res.status === 401) {
+      clearToken()
+      window.dispatchEvent(new Event('avito:unauthorized'))
+      throw new Error('Сессия истекла')
+    }
     if (!res.ok) throw new Error('Не удалось скачать архив')
     const blob = await res.blob()
     const url = URL.createObjectURL(blob)
@@ -316,11 +361,48 @@ export const api = {
     URL.revokeObjectURL(url)
   },
 
+  async downloadDraftsArchive(): Promise<void> {
+    if (isTokenExpired()) {
+      clearToken()
+      window.dispatchEvent(new Event('avito:unauthorized'))
+      throw new Error('Сессия истекла')
+    }
+    const token = getToken()
+    const res = await fetch('/api/listings/drafts/archive', {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+    if (res.status === 401) {
+      clearToken()
+      window.dispatchEvent(new Event('avito:unauthorized'))
+      throw new Error('Сессия истекла')
+    }
+    if (!res.ok) throw new Error('Не удалось скачать архив черновиков')
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'drafts.zip'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  },
+
   async getPhotoBlob(url: string): Promise<Blob> {
+    if (isTokenExpired()) {
+      clearToken()
+      window.dispatchEvent(new Event('avito:unauthorized'))
+      throw new Error('Сессия истекла')
+    }
     const token = getToken()
     const res = await fetch(url, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
+    if (res.status === 401) {
+      clearToken()
+      window.dispatchEvent(new Event('avito:unauthorized'))
+      throw new Error('Сессия истекла')
+    }
     if (!res.ok) throw new Error('Не удалось загрузить фото')
     return res.blob()
   },

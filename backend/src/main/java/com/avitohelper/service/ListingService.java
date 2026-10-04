@@ -205,6 +205,60 @@ public class ListingService {
     }
 
     @Transactional(readOnly = true)
+    public void writeDraftsArchive(Long userId, OutputStream out) throws IOException {
+        List<Listing> drafts = listingRepository.findByUserIdAndStatusWithPhotos(userId, ListingStatus.DRAFT);
+
+        try (ZipOutputStream zip = new ZipOutputStream(out)) {
+            for (Listing listing : drafts) {
+                // Создаём подпапку для каждого объявления (ID для надёжности)
+                String folderName = listing.getId() + " - " + sanitizeFileName(listing.getTitle());
+                
+                // Создаём info.txt с информацией об объявлении
+                String infoContent = String.format(
+                        "Название: %s\nЦена: %s\nОписание: %s\nКатегория: %s\n",
+                        listing.getTitle(),
+                        formatPrice(listing.getPriceKopecks()),
+                        listing.getDescription() != null ? listing.getDescription() : "",
+                        listing.getCategory() != null ? listing.getCategory() : ""
+                );
+                
+                zip.putNextEntry(new ZipEntry(folderName + "/info.txt"));
+                zip.write(infoContent.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                zip.closeEntry();
+
+                // Добавляем фото объявления
+                int photoIndex = 1;
+                for (Photo photo : listing.getPhotos()) {
+                    String photoName = photo.getFileName() != null && !photo.getFileName().isBlank()
+                            ? sanitizeFileName(photo.getFileName())
+                            : "photo-" + photoIndex + ".jpg";
+                    
+                    zip.putNextEntry(new ZipEntry(folderName + "/" + photoName));
+                    try (InputStream in = storageService.get(photo.getStorageKey())) {
+                        in.transferTo(zip);
+                    }
+                    zip.closeEntry();
+                    photoIndex++;
+                }
+            }
+        }
+    }
+
+    private String sanitizeFileName(String name) {
+        // Заменяем недопустимые символы на подчёркивания
+        return name.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
+    }
+
+    private String formatPrice(Long kopecks) {
+        if (kopecks == null) return "0 руб.";
+        double rubles = kopecks / 100.0;
+        java.text.NumberFormat format = java.text.NumberFormat.getInstance(new java.util.Locale("ru", "RU"));
+        format.setMinimumFractionDigits(0);
+        format.setMaximumFractionDigits(2);
+        return format.format(rubles) + " руб.";
+    }
+
+    @Transactional(readOnly = true)
     public void writePhotosZip(Long userId, Long listingId, OutputStream out) throws IOException {
         Listing listing = getOwned(userId, listingId);
         try (ZipOutputStream zip = new ZipOutputStream(out)) {
