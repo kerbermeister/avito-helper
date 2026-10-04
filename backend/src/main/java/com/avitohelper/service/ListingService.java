@@ -229,10 +229,17 @@ public class ListingService {
                 // Добавляем фото объявления
                 int photoIndex = 1;
                 for (Photo photo : listing.getPhotos()) {
-                    String photoName = photo.getFileName() != null && !photo.getFileName().isBlank()
+                    String baseName = photo.getFileName() != null && !photo.getFileName().isBlank()
                             ? sanitizeFileName(photo.getFileName())
-                            : "photo-" + photoIndex + ".jpg";
-                    
+                            : "photo";
+                    String ext = "";
+                    int dot = baseName.lastIndexOf('.');
+                    if (dot > 0) {
+                        ext = baseName.substring(dot);
+                        baseName = baseName.substring(0, dot);
+                    }
+                    String photoName = photoIndex + "_" + baseName + ext;
+
                     zip.putNextEntry(new ZipEntry(folderName + "/" + photoName));
                     try (InputStream in = storageService.get(photo.getStorageKey())) {
                         in.transferTo(zip);
@@ -250,12 +257,8 @@ public class ListingService {
     }
 
     private String formatPrice(Long kopecks) {
-        if (kopecks == null) return "0 руб.";
-        double rubles = kopecks / 100.0;
-        java.text.NumberFormat format = java.text.NumberFormat.getInstance(new java.util.Locale("ru", "RU"));
-        format.setMinimumFractionDigits(0);
-        format.setMaximumFractionDigits(2);
-        return format.format(rubles) + " руб.";
+        if (kopecks == null || kopecks == 0) return "0";
+        return java.math.BigDecimal.valueOf(kopecks).movePointLeft(2).stripTrailingZeros().toPlainString();
     }
 
     @Transactional(readOnly = true)
