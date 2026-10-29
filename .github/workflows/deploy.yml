@@ -54,8 +54,14 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
+            set -eu
+            if [ -x /usr/local/sbin/voicechat-shared-deploy ]; then
+              /usr/local/sbin/voicechat-shared-deploy avito-update
+              exit 0
+            fi
             cd /opt/avito-helper
-            git checkout -- . 2>/dev/null || true
+            git diff --quiet
+            git diff --cached --quiet
             git pull --ff-only
             cd deploy
             docker compose pull
